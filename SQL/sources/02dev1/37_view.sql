@@ -25,15 +25,15 @@ SELECT * FROM sales.product_info;
 
 
 --------------------------------------
--- anoter 
+-- anoter example
 --------------------------------------
-CREATE OR ALTER sales.daily_sales (
+CREATE VIEW sales.daily_sales ( -- 별도로 칼럼 이름을 지정할 수도 있다.
     year,
     month,
     day,
     customer_name,
     product_id,
-    product_name
+    product_name,
     sales
 )
 AS
@@ -67,10 +67,40 @@ SELECT
 FROM 
     sales.daily_sales
 ORDER BY 
-    y, 
-    m, 
-    d, 
+    year, 
+    month, 
+    day, 
     customer_name;
+
+--------------------------------------
+-- aggregate functions 적용된 결과 셋을 view 와 함께 적용
+--------------------------------------
+CREATE VIEW sales.staff_sales (
+        first_name, 
+        last_name,
+        year, 
+        amount
+)
+AS 
+    SELECT 
+        first_name,
+        last_name,
+        YEAR(order_date),
+        SUM(list_price * quantity) amount
+    FROM
+        sales.order_items i
+    INNER JOIN sales.orders o
+        ON i.order_id = o.order_id
+    INNER JOIN sales.staffs s
+        ON s.staff_id = o.staff_id
+    GROUP BY 
+        first_name, 
+        last_name, 
+        YEAR(order_date);
+
+
+-- test
+select * from sales.staff_sales
 
 --------------------------------------
 -- Drop View
@@ -97,8 +127,29 @@ DROP VIEW IF EXISTS
     sales.staff_sales, 
     sales.product_catalogs;
 
+
+/* -------- normalization and de-normalization(정규화와 비정규화) -------- */
+-- ref: https://owlyr.tistory.com/20
+
+--------------------------------------
+-- List View infromation from system table
+--------------------------------------
+-- TIP: 하나의 utility 처럼 알고 있으면 편함
+-- ref: https://learn.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-objects-transact-sql?view=sql-server-ver16
+SELECT 
+	OBJECT_SCHEMA_NAME(o.object_id) schema_name,
+	o.name
+FROM
+	sys.objects o
+WHERE
+	o.type = 'V';
+
+-- TIP: view 구문을 알아내기 위한 방법 중 많이 사용
+sp_helptext 'sales.staff_sales'
+
 --------------------------------------
 -- Indexed View == Materialized View
+-- 결과 셋 저장
 --------------------------------------
 /*-------------------------------
 -- stores "data" (not just query) physically like a table hence may provide some the performance benefit if they are used appropriately
@@ -109,8 +160,8 @@ DROP VIEW IF EXISTS
     -- When you write to underlying table, SQL server has to write to the index of the view. Therefore, you "should" only create an indexed view against the tables that have in-frequent data updates
 --------------------------------*/
 
-CREATE VIEW product_master
-WITH SCHEMABINDING -- binding to underlying tables
+CREATE VIEW production.product_master
+WITH SCHEMABINDING -- binding to underlying tables (주의: index 를 생성하기 전까지는 아직 physical 하게 결과셋을 저장했다고 볼 수 없다. 아래의 IO 결과 참조)
 AS 
 SELECT
     product_id,
@@ -135,7 +186,6 @@ SELECT
     * 
 FROM
     production.product_master
-    WITH (NOEXPAND) -- Enterprise Edition 이 아닌 버전에서는 사용해야 함
 ORDER BY
     product_name;
 GO 
@@ -149,8 +199,10 @@ GO
 -- Table 'brands'. Scan count 1, logical reads 2, physical reads 1, read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob read-ahead reads 0.
 
 -- 위에서 알 수 있듯이, view 에 대한 I/O 는 products, categories 그리고 brands 라는 테이블을 조회한다.
+-- 즉 아직은 view 자체가 일반 view 를 조회하는 것처럼 관련 있는 table 들을 scan 하고 있다.
 --------------------------------*/
 
+-- 다음과 같이 index 를 적용할 때에 "비로소" physical 하게 결과셋을 저장한다.
 -- apply index to the view
 CREATE UNIQUE CLUSTERED INDEX 
     ucidx_product_id 
@@ -161,7 +213,7 @@ SELECT
     * 
 FROM
     production.product_master
-    WITH (NOEXPAND) -- Enterprise Edition 이 아닌 버전에서는 사용해야 함
+    WITH (NOEXPAND) -- 주의: Enterprise Edition 이 아닌 버전에서는 사용해야 함
 ORDER BY
     product_name;
 GO 
