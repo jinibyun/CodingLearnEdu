@@ -345,3 +345,62 @@ SELECT
         THEN 'Cast failed'
         ELSE 'Cast succeeded'
     END AS Result;
+
+
+--------------------------------------
+-- 5. Window Function
+-- First_Value(), Last_Value(), Rank() 등 여러 함수 들이 있는데 
+-- 여기에서는 그 중에 자주 사용하는 Row_Number() 만을 알아보기로 한다.
+--------------------------------------
+SELECT 
+   ROW_NUMBER() OVER (
+	ORDER BY first_name
+   ) row_num,
+   first_name, 
+   last_name, 
+   city
+FROM 
+   sales.customers;
+
+
+-- 별도의 세부 사항을 Partition 해서 Row_number() 적용
+SELECT 
+   first_name, 
+   last_name, 
+   city,
+   ROW_NUMBER() OVER (
+      PARTITION BY city
+      ORDER BY first_name
+   ) row_num
+FROM 
+   sales.customers
+ORDER BY 
+   city;
+
+-- pagination
+WITH cte_customers AS (
+    SELECT 
+        ROW_NUMBER() OVER(
+             ORDER BY 
+                first_name, 
+                last_name
+        ) row_num, 
+        customer_id, 
+        first_name, 
+        last_name
+     FROM 
+        sales.customers
+) SELECT 
+    customer_id, 
+    first_name, 
+    last_name
+FROM 
+    cte_customers
+WHERE 
+    row_num > 20 AND 
+    row_num <= 30;
+
+
+
+-- TIP: 참고로 Order by 를 하지 않고, 그대로 Row_number 만 적용하고자 할 때
+-- ref: https://stackoverflow.com/questions/44105691/row-number-without-order-by

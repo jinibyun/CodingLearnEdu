@@ -136,3 +136,37 @@ ORDER BY
     net_amount DESC;
 
 -- 주의할 점: scalar function 을 이용하여 Data 를 update 할 수는 없다.
+
+
+/************************************************
+Assignment 4
+
+앞서 진행했던 Assingment 1 (View 생성) 했던 부분을 Function 으로 만들어서 table value 를 return 한다.
+단, 파라미터를 정의할 수 없는 view 와는 다르게 함수는 parameter 를 정할 수 있다. @model_year 를 파라미터로 정하고 production.products 의 model_year 와 비교해서 일치하는 것만 리턴 할 수 있도록 한다.
+************************************************/
+
+
+/************************************************
+Assignment 5
+
+다음의 query 는 주문 상황별 숫자를 리턴하는 쿼리이다.
+여기에서 알고 싶은 것은 주문이 completed 가 되지 않는 다른 상황에 있는 숫자의 합을 function 으로 구성해 보기. 파라미터는 년도로 지정할 것.
+참고로 아래의 쿼리 구문을 그대로 이용하지 않아도 상관 없다. 그대로 이용하지 않는 것이 더 간단하다.
+
+
+SELECT    
+    CASE order_status
+        WHEN 1 THEN 'Pending'
+        WHEN 2 THEN 'Processing'
+        WHEN 3 THEN 'Rejected'
+        WHEN 4 THEN 'Completed'
+    END AS order_status, 
+    COUNT(order_id) order_count
+FROM    
+    sales.orders
+WHERE 
+    YEAR(order_date) = 2018
+GROUP BY 
+    order_status;
+
+************************************************/

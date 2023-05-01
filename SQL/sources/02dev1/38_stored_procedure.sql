@@ -330,3 +330,107 @@ GO
 EXEC usp_delete_person 2; -- 에러 발생하지 않는다.
 EXEC usp_delete_person 1; -- 에러 발생한다.
 
+
+/************************************************
+Assignment 2
+
+다음 CTE 구문은 2018 년도 영업 사원 실적을 보여주는 CTE 쿼리 구문이다. sp 작성시 이 쿼리 구문을 이용하고, 수정한다.
+
+2018 년도라고 하는 year 값과 영업 사원의 이름 값을 파라미터로 정의해서 그 두 가지 파라미터 값을 받아 동적으로 결과 값을 리턴하는 stored procedure 를 작성한다.
+
+필요시에 이름 값 비교는 like pattern matching 을 이용한다.
+
+
+WITH cte_sales_amounts (staff, sales, year) AS (
+    SELECT    -- it is like "subquery"
+        first_name + ' ' + last_name, 
+        SUM(quantity * list_price * (1 - discount)),
+        YEAR(order_date)
+    FROM    
+        sales.orders o
+    INNER JOIN sales.order_items i ON i.order_id = o.order_id
+    INNER JOIN sales.staffs s ON s.staff_id = o.staff_id
+    GROUP BY 
+        first_name + ' ' + last_name,
+        year(order_date)
+)
+
+SELECT
+    staff, 
+    sales
+FROM 
+    cte_sales_amounts
+WHERE
+    year = 2018;
+
+*************************************************/
+
+/************************************************
+Assignment 3
+
+앞서, 기본 코스에서 Update...Set...From 이라는 Update 구문을 배웠었다.
+sp 생성하기 앞서 관련 table들 생성 여부와 상관 없이 (새롭게 DB 를 셋업한 상태라고 가정하고) 다음의 준비 과정을 거친다.
+우선 prep 0, 1, 2 과정을 반드시 진행한 후에 stored procedure 를 작성한다.
+
+그 후에 다음의 update set from 구문을 stored procedure 로 구성한다. 단 별개의 조건을 진행하는데 모든 staff 에 대해서 일괄적으로 진행하는 것이 아니라 개별 staff 에 대해서 update 가 가능하도록 구성한다. 즉 staff_id 를 parameter 로 한다. 뿐만아니라 얼마나 실제 금액이 인상됐는지 그 인상 금액을 output keyword  로 return 한다. 그리고 특별히 데이타 변경 구문에서는 try catch 구문을 활용하여 error handling 을 진행한다. 앞서 배웠던 begin tran, commit/rollback tran을 모두 적용한다.
+마지막으로 작성한 stored procedure 를 호출하는 code 도 작성한다.
+
+
+        UPDATE
+            sales.commissions
+        SET
+            sales.commissions.commission = 
+                c.base_amount * t.percentage
+        FROM 
+            sales.commissions c
+            INNER JOIN sales.targets t
+                ON c.target_id = t.target_id;
+
+-- prep 0
+Drop table if exists sales.targets;
+Drop table if exists sales.commissions;
+
+-- prep 1
+CREATE TABLE sales.targets
+(
+    target_id  INT	PRIMARY KEY, 
+    percentage DECIMAL(4, 2) 
+        NOT NULL DEFAULT 0
+);
+
+INSERT INTO 
+    sales.targets(target_id, percentage)
+VALUES
+    (1,0.2),
+    (2,0.3),
+    (3,0.5),
+    (4,0.6),
+    (5,0.8);
+
+-- prep 2
+CREATE TABLE sales.commissions
+(
+    staff_id    INT PRIMARY KEY, 
+    target_id   INT, 
+    base_amount DECIMAL(10, 2) 
+        NOT NULL DEFAULT 0, 
+    commission  DECIMAL(10, 2) 
+        NOT NULL DEFAULT 0, 
+    FOREIGN KEY(target_id) 
+        REFERENCES sales.targets(target_id), 
+    FOREIGN KEY(staff_id) 
+        REFERENCES sales.staffs(staff_id),
+);
+
+INSERT INTO 
+    sales.commissions(staff_id, base_amount, target_id)
+VALUES
+    (1,100000,2),
+    (2,120000,1),
+    (3,80000,3),
+    (4,900000,4),
+    (5,950000,5);
+-- test
+select * from sales.commissions
+
+************************************************/

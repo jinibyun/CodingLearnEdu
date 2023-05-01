@@ -7,7 +7,16 @@ trigger: DB 에서 이뤄지는 하나의 Action 에 반응하여 다른 Action 
 -- 2. DDL triggers: CREATE, ALTER, and DROP statements. DDL 관련 stored procedures 도 이에 해당
 -- 3. Logon triggers: LOGON events  (로그인 tracking과 session 수 제한 하기 위해서 사용. 예제는 생략)
 
-Creating a trigger in SQL Server – show you how to create a trigger in response to insert and delete events.
+
+-- 3 characteristics (stored procedure 혹은 function 과 비슷해 보이지만 그것들과 구별되게 해 주는 관점에서 보면 이해하기 용이해진다)
+-- 1. SP, Function 과는 다르게 사용자가 직접 호출해서 실행할 수 없다
+-- 2. View 와 마찬가지로 parameter 정의 불가능
+-- 3. Trigger 안에서는 Commit/Rollback transction 사용 불가능
+
+
+-- 주 용도
+-- 1. Audit
+-- 2. Business Rule
 
 --------------------------------------
 -- 1. DML Trigger
@@ -28,7 +37,7 @@ CREATE TABLE production.product_audits(
 );
 
 -- create "After" trigger
--- 아래 trigger 의 역할은 production.products 테이블에서 어떤 레코드가 삽입, 삭제 될때마다 그 레코들을 production.product_audits table 에 기록한다
+-- 아래 trigger 의 역할은 production.products 테이블에서 어떤 레코드가 삽입, 삭제 될때마다 바로 "직후"(After) 그 레코들을 production.product_audits table 에 기록한다
 CREATE TRIGGER production.trg_product_audit
 ON production.products
 AFTER INSERT, DELETE -- "After" . 여기에 사용할 수 있는 option 은 INSERT, UPDATE, DELETE
@@ -106,6 +115,12 @@ SELECT
 FROM 
     production.product_audits;
 
+
+/*-------- 참고 사항 -------- */
+/* DML Trigger 의 세부 용도 중 두 가지 (두 가지 type)
+1. FOR or AFTER [INSERT, UPDATE, DELETE]: 위의 예제에서 처럼 어떤 table 의 insert/update/delete 작업 직후 연달아 자동으로 일어나게끔 할 때 사용.
+2. INSTEAD OF [INSERT, UPDATE, DELETE]: After 타입과는 반드래ㅗ, INSTEAD OF 트리거는 실제 insert/update/delete 작업을 대체하는 다른 action 을 정의할 때 사용. 여기에서 예제는 생략
+*/
 
 --------------------------------------
 -- 2. DDL Trigger
@@ -244,3 +259,127 @@ WHERE
     type = 'TR';
 
 
+/************************************************
+Assignment 6
+DML trigger 코드를 분석, 이해 해서 전체 로직에 대한 다이어그램을 그려보기
+
+-- prep 0
+CREATE TABLE test.Employees
+(
+    EmployeeID integer NOT NULL IDENTITY(1, 1) ,
+    EmployeeName VARCHAR(50) ,
+    EmployeeAddress VARCHAR(50) ,
+    MonthSalary NUMERIC(10, 2)
+    PRIMARY KEY CLUSTERED (EmployeeID)
+);
+
+-- prep 1
+CREATE TABLE test.EmployeesAudit
+(
+    AuditID INTEGER NOT NULL IDENTITY(1, 1) ,
+    EmployeeID INTEGER ,
+    EmployeeName VARCHAR(50) ,
+    EmployeeAddress VARCHAR(50) ,
+    MonthSalary NUMERIC(10, 2) ,
+    ModifiedBy VARCHAR(128) ,
+    ModifiedDate DATETIME ,
+    Operation CHAR(1) -- 'I' for insert, 'U' for Update and 'D' for Delete
+    PRIMARY KEY CLUSTERED ( AuditID )
+);
+
+
+-- prep 2
+INSERT INTO test.Employees
+        ( EmployeeName ,
+          EmployeeAddress ,
+          MonthSalary
+        )
+SELECT 'Mark Smith', 'Ocean Dr 1234', 10000
+UNION ALL
+SELECT 'Joe Wright', 'Evergreen 1234', 10000
+UNION ALL
+SELECT 'John Doe', 'International Dr 1234', 10000
+UNION ALL
+SELECT 'Peter Rodriguez', '74 Street 1234', 10000
+GO			
+
+select * from test.Employees
+-- trigger 작성
+-- 우선 이 trigger 작성의 목표는 test.Employees 를 수정하고 있는 사용자를 Audit 하기 위함이다.
+
+CREATE TRIGGER TR_Audit_Employees ON test.Employees
+    FOR INSERT, UPDATE, DELETE -- FOR 혹은 AFTER 
+AS
+    DECLARE @login_name VARCHAR(128)
+
+    -- 아래의 쿼리는 현재 접속한 사용자의 사용자 ID 를 조회
+    SELECT  @login_name = login_name
+    FROM    sys.dm_exec_sessions -- sys.dm_exec_sessions 라는 내부 뷰를 통해 SQL 서버에 접속해 있는 모든 사용자 정보를 조회할 수 있다.
+    WHERE   session_id = @@SPID -- @@SPID: 현재 접속한 사용자에게 SQL 서버가 부여한 ID 를 리턴
+ 
+    IF EXISTS ( SELECT 0 FROM Deleted ) -- select 0 from table 표현: 레코드의 값이 있으면 첫 번째 칼럼 값을 모두 0 으로 처리해서 리턴. 즉 레코드 값이 있는지 없는지를 체크할 때 사용
+        BEGIN
+            IF EXISTS ( SELECT 0 FROM Inserted ) -- 즉 여기서는 DELETED 와 INSERTED 모두 레코드가 있다는 의미: 다시 말하면 UPDATE 작업이 이뤄지고 있는 경우를 체크
+                BEGIN
+                    INSERT  INTO dbo.EmployeesAudit
+                            ( EmployeeID ,
+                              EmployeeName ,
+                              EmployeeAddress ,
+                              MonthSalary ,
+                              ModifiedBy ,
+                              ModifiedDate ,
+                              Operation
+                            )
+                            SELECT  D.EmployeeID ,
+                                    D.EmployeeName ,
+                                    D.EmployeeAddress ,
+                                    D.MonthSalary ,
+                                    @login_name ,
+                                    GETDATE() ,
+                                    'U'
+                            FROM    Deleted D
+                END
+            ELSE -- DELETE 의 경우 체크
+                BEGIN
+                    INSERT  INTO dbo.EmployeesAudit
+                            ( EmployeeID ,
+                              EmployeeName ,
+                              EmployeeAddress ,
+                              MonthSalary ,
+                              ModifiedBy ,
+                              ModifiedDate ,
+                              Operation
+                            )
+                            SELECT  D.EmployeeID ,
+                                    D.EmployeeName ,
+                                    D.EmployeeAddress ,
+                                    D.MonthSalary ,
+                                    @login_name ,
+                                    GETDATE() ,
+                                    'D'
+                            FROM    Deleted D
+                END  
+        END
+    ELSE -- DELETE 에 관계된 작업이 아닌 경우. 즉 UPDATE (INSERT + DELETE) 혹은 DELETE 가 아닌 경우, 다시 말해 INSERT 인 경우
+        BEGIN
+            INSERT  INTO dbo.EmployeesAudit
+                    ( EmployeeID ,
+                      EmployeeName ,
+                      EmployeeAddress ,
+                      MonthSalary ,
+                      ModifiedBy ,
+                      ModifiedDate ,
+                      Operation
+                    )
+                    SELECT  I.EmployeeID ,
+                            I.EmployeeName ,
+                            I.EmployeeAddress ,
+                            I.MonthSalary ,
+                            @login_name ,
+                            GETDATE() ,
+                            'I'
+                    FROM    Inserted I
+        END
+GO
+
+************************************************/

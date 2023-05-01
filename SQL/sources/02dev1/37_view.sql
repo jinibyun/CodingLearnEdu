@@ -103,7 +103,7 @@ AS
 select * from sales.staff_sales
 
 --------------------------------------
--- Drop View
+-- Drop View 
 --------------------------------------
 DROP VIEW IF EXISTS sales.daily_sales;
 
@@ -131,6 +131,7 @@ DROP VIEW IF EXISTS
 /* -------- normalization and de-normalization(정규화와 비정규화) -------- */
 -- ref: https://owlyr.tistory.com/20
 
+
 --------------------------------------
 -- List View infromation from system table
 --------------------------------------
@@ -153,7 +154,7 @@ sp_helptext 'sales.staff_sales'
 --------------------------------------
 /*-------------------------------
 -- stores "data" (not just query) physically like a table hence may provide some the performance benefit if they are used appropriately
--- NOTE: consider using only for "in"freqent change of data
+-- NOTE: 자주 변경되지 않는 데이타 결과에 적용한다.
 -- When changing the structure of the underlying tables, then, you must "drop" indexed view first.
 -- requires all referenced objects in the "same" database
 -- When the data (not structure) of the underlying tables changes, the data in the indexed view is also "automatically" updated
@@ -225,3 +226,11 @@ GO
 
 -- 위에서 알 수 있듯이, underlying table 에 대한 scanning 을 하지 않고, 바로 indexed view 로부터 값을 가져온다.
 --------------------------------*/
+
+
+/************************************************
+Assignment 1
+
+Production.products 와 Production.brands 를 통해 제품의 brand_name 과 list_price 의 평균 값을 가져오되, 조건은 2018 년도 모델에 한정되는 결과를 가져오는 query 를 작성하고 이를 view 로 작성한다.
+
+*************************************************/
