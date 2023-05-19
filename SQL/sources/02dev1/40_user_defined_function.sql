@@ -96,7 +96,7 @@ BEGIN
     FROM
         sales.customers;
 
-    RETURN;
+    RETURN @contacts;
 END;
 
 

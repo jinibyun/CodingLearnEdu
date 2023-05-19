@@ -13,6 +13,7 @@ index: table 과 view 의 data 조회 성능 향상을 위한 특별한 형식�
 -- 1.1 without index
 -- prep
 -- PK 설정이 되어 있지 않은 table 생성 후 데이타 입력
+
 CREATE TABLE production.parts(
     part_id   INT NOT NULL, 
     part_name VARCHAR(100)
@@ -48,6 +49,7 @@ WHERE
 
 -- 1.2 with index
 -- prep
+
 CREATE TABLE production.part_prices(
     part_id int,
     valid_from date,
@@ -55,11 +57,12 @@ CREATE TABLE production.part_prices(
     PRIMARY KEY(part_id, valid_from) 
 );
 
--- 참고: 아래와 같이 만약 table 구조를 수정하여 새로운 칼럼을 PK 에 포함 시킨다면, 그 부분에 대해서는 별도의 non-clustered index 가 생성된다.
+-- 참고: 아래와 같이 만약 table 구조를 수정하여 새로운 칼럼을 PK 에 포함 시킨다면
+-- , 그 부분에 대해서는 기존의 clustered index 에 포함된다.
 ALTER TABLE production.parts
 ADD PRIMARY KEY(part_id);
 
--- 1.3 apply index to table with no PK
+-- 1.3 apply index to table with no PK  (수정)
 CREATE CLUSTERED INDEX ix_parts_id -- 주의: 만약에 Clustered 라는 말이 생략되면 non clustered index 가 생성된다.
 ON production.parts (part_id);  
 
@@ -74,11 +77,17 @@ FROM
 WHERE 
     part_id = 5;
 
+-- 특별히 "Estimated number of rows to be read" 의 값의 대조를 통해
+-- table scan 과 index scanning 을 비교한다.
+-- MS 의 정의에 의하면
+-- “Estimated number of rows to be read” is how many pages 
+-- you had to go through to find the entries you were looking for 라고 할 수 있다.
 
 --------------------------------------
 -- 2. non clustered index
 --------------------------------------
--- clustered index 와는 달리 a nonclustered index 는 Data Page 를 그대로 둔 상태에서, 별도로 leaf page 와 root page 를 구성한다. 
+-- clustered index 와는 달리 a nonclustered index 는 Data Page 를 그대로 둔 상태에서, 
+-- 별도로 leaf page 와 root page 를 구성한다. 
 -- 이 때 clustered index 와 마찬가지로 B Tree 를 구성한다.
 
 SELECT 
@@ -88,7 +97,8 @@ FROM
     sales.customers
 WHERE 
     city = 'Atwater';
--- estimated plan 을 보면 clustered index 을 타긴 하지만, city 칼럼이 적용되지 않았다.
+-- estimated plan 을 보면 clustered index 을 타긴 하지만, 
+-- city 칼럼이 적용되지 않았다.
 
 
 -- non clustered index 생성
@@ -109,7 +119,10 @@ WHERE
 
 /* --------- multiple columns 에 non clustered index 적용 -------- */
 CREATE INDEX ix_customers_name 
-ON sales.customers(last_name, first_name); -- NOTE: multiple columns 를 가지고 non clustered index 생성시, 주의할 점은 칼럼의 정의 "순서" 가 중요함. 자주 사용하는 칼럼을 앞에 두고 정의 한다.
+ON sales.customers(last_name, first_name); 
+-- NOTE: multiple columns 를 가지고 non clustered index 생성시, 
+-- 주의할 점은 칼럼의 정의 "순서" 가 중요함. 
+-- 자주 사용하는 칼럼을 앞에 두고 정의 한다.
 
 -- test
 SELECT 
@@ -131,7 +144,8 @@ WHERE
 ===============
 Clustered index
 ===============
-1. 테이블 데이터가 자주 업데이트 되지 않는 경우 (왜냐하면 조회시에는 월등한 성능을 기대하지만, 입력시에는 별도로 데이타 page 에 대한 재정렬 작업을 해 주어야 하므로)
+1. 테이블 데이터가 자주 업데이트 되지 않는 경우 
+(왜냐하면 조회시에는 월등한 성능을 기대하지만, 입력시에는 별도로 데이타 page 에 대한 재정렬 작업을 해 주어야 하므로)
 2. 항상 정렬 된 방식으로 데이터를 반환해야하는 경우
 3. 테이블은 정렬되어있기 때문에 ORDER BY 절을 활용해 모든 테이블 데이터를 스캔하지 않고 원하는 데이터를 조회할 수 있다.
 4. 읽기 작업이 월등히 많은 경우, 이때 매우 빠르다.
@@ -166,21 +180,25 @@ EXEC sp_rename
 -- 5. disable/enable index
 --------------------------------------
 -- 1. disable
-ALTER INDEX ix_cust_city 
+ALTER INDEX ix_customers_city
 ON sales.customers 
 DISABLE;
 
 -- table 과 관련되 모든 index 들을 한 번에 disable
 ALTER INDEX ALL ON sales.customers
-DISABLE; -- 이유: 대용량의 데이타를 Update 하기 전에 overhead 를 피하기 위해 일부러 이렇게 index 를 잠시 disable 해 둔다.
+DISABLE; 
+-- 이유: 대용량의 데이타를 Update 하기 전에 
+-- overhead 를 피하기 위해 일부러 이렇게 index 를 잠시 disable 해 둔다.
 
 -- test
 select * from sales.customers
--- 주의: 한번 disable 하고 나면 다음과 같이 table 자체에 대한 scanning 조차 이뤄지지 않게 된다. result: The query processor is unable to produce a plan because the index 'PK__customer__CD65CB855363011F' on table or view 'customers' is disabled.
+-- 주의: 한번 disable 하고 나면 다음과 같이 table 자체에 대한 scanning 조차 이뤄지지 않게 된다. 
+-- result: The query processor is unable to produce a plan because the index 'PK__customer__CD65CB855363011F' on table or view 'customers' is disabled.
 
 -- 2. enable
 ALTER INDEX ALL ON sales.customers
-REBUILD; -- 이유: 대용량의 데이타를 Update 하기 전에 overhead 를 피하기 위해 일부러 이렇게 index 를 잠시 disable 해 둔 것을 다시 사용하기 위해 진행
+REBUILD; 
+-- 이유: 대용량의 데이타를 Update 하기 전에 overhead 를 피하기 위해 일부러 이렇게 index 를 잠시 disable 해 둔 것을 다시 사용하기 위해 진행
 
 -- test
 select * from sales.customers
@@ -188,7 +206,7 @@ select * from sales.customers
 
 
 ----------------------------------------------------------------------
--- 6. Performance 향상을 위해 Index 사용시 추가적으로 고려해서 적용할 사항
+-- 6. Performance 향상을 위해 Index 사용시 "추가적으로 고려" 해서 적용할 사항
 -- Included Columns, Filtered Indexes
 ----------------------------------------------------------------------
 /* ------ 6-1. Included Columns ------ */
@@ -203,7 +221,8 @@ SELECT
 FROM    
     sales.customers
 WHERE 
-    email = 'aide.franco@msn.com'; -- 아무 문제 없이 ix_cust_email non-clustered index 100% 가 확인
+    email = 'aide.franco@msn.com'; 
+	-- 아무 문제 없이 ix_cust_email non-clustered index 100% 가 확인
 
 
 -- test
@@ -213,7 +232,9 @@ SELECT
 	email
 FROM    
 	sales.customers
-WHERE email = 'aide.franco@msn.com'; -- ix_cust_email non-clustered index 가 50%, 나머지 50% 는 key look 으로 50% 를 차지 한다.
+WHERE email = 'aide.franco@msn.com'; 
+-- ix_cust_email non-clustered index 가 50%, 
+-- 나머지 50% 는 key look 으로 50% 를 차지 한다.
 
 -- 이를 개선하기 위해 (즉 ix_cust_email non-clustered index 로 하여금 100% index seek 을 하게 하기 위해)
 DROP INDEX ix_cust_email 
@@ -236,7 +257,9 @@ WHERE email = 'aide.franco@msn.com'; -- ix_cust_email non-clustered index 가 10
 
 /* ------ 6-2. Filtered Index ------ */
 -- NOTE
--- Non clustered index 의 단점을 보면 크게 봐서 두 가지가 있다. 별도의 data copy 에 대한 공간 차지와 관리적인 부분이 있다. 이를 조금이나마 해결하기 위해 filtered index 를 사용하게 된다.
+-- Non clustered index 의 단점을 보면 크게 봐서 두 가지가 있다. 
+-- 별도의 data copy 에 대한 공간 차지와 관리적인 부분이 있다. 
+-- 이를 조금이나마 해결하기 위해 filtered index 를 사용하게 된다.
 
 CREATE INDEX ix_cust_phone
 ON sales.customers(phone)
@@ -253,4 +276,101 @@ FROM
     sales.customers
 WHERE phone = '(281) 363-3309';
 
+-- TIP: table 에 연결되어 있는 index 확인
+sp_helpindex 'sales.customers'
 
+/********* 
+추가: Unique index (Unique 라는 성격을 clustered 혹은 non-clustered 와 조합
+해서 추가적인 제약 조건을 가하는 것)
+***********/
+
+-- prep : 앞서 적용되어 있는 ix_cust_email_inc 를 잠시 삭제한다.
+drop index ix_cust_email_inc
+on sales.customers
+
+-- test (index scan 이 일어나고 있지만, "Estimated # of reads..." 는 최적화 되어
+-- 있지 않음을 볼 수 있다.
+SELECT
+    customer_id, 
+    email 
+FROM
+    sales.customers
+WHERE 
+    email = 'caren.stephens@msn.com';
+
+-- test (email 중복성 체크)
+SELECT 
+    email, 
+    COUNT(email)
+FROM 
+    sales.customers
+GROUP BY 
+    email
+HAVING 
+    COUNT(email) > 1;
+
+-- 위의 test 결과 중복성이 email 에 없으므로, 여기에 unique index 를 설정할 수 있다.
+CREATE UNIQUE INDEX ix_cust_email 
+ON sales.customers(email);
+
+-- test
+-- 결과는 "Estimated # of reads..." 가 일반 non-clustered index 를 적용했을 때와 동일
+SELECT
+    customer_id, 
+    email 
+FROM
+    sales.customers
+WHERE 
+    email = 'caren.stephens@msn.com';
+
+-- 참고: unique constraint 를 칼럼 정의시 지정하게 되면
+-- 내부적으로 자동으로 unique index 를 생성하게 된다.
+
+/************************************************
+Assignment 8
+-- index 적용을 하기 위해 table 을 생성해서, 대용량의 레코드를 삽입한다.
+
+create table IndexTest
+(
+	id int identity(1,1) PRIMARY KEY,
+	num int not null,
+	name varchar(20) not null,
+	updateDate datetime not null
+)
+-- 200000 레코드 삽입 (약 1 분 10 초 소요)
+
+declare @count int;
+declare @name varchar(20)
+set @count = 0;
+set @name = ''
+
+while @count <= 200000 
+begin
+	set @name = 'TEST ' + cast(@count as varchar)
+		INSERT INTO IndexTest (num, name, updateDate)
+			select @count, @name, getdate()
+           
+    set @count = @count + 1;
+end
+
+-- 다음 쿼리 구문을 통해 table scan 이 아닌 index scan 을 확인 한다. (실행 플랜)
+-- Estimated Numbers of Rows to be read 확인한다.
+-- "속도" 향상을 위해서 적용할 수 있는 non-clustered index 를 적용한다.
+-- filtered index 구문도 함께 사용한다.
+
+select 
+	num, name, updateDate
+from IndexTest
+where num > 100000
+
+drop index ix_IndexTest_num
+on IndexTest
+
+create index ix_IndexTest_num
+on IndexTest(num)
+include (name, updateDate)
+
+
+
+
+*************************************************/

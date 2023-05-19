@@ -2,7 +2,7 @@
 exception handling
 *********************************/
 /* ------- error hanling 이 없는 sp ------ */
-CREATE PROCEDURE spDivideTwoNumber (
+ALTER PROCEDURE spDivideTwoNumber (
     @Number1 INT
     , @Number2 INT
     )
@@ -20,13 +20,15 @@ END
 EXEC spDivideTwoNumber 100
     , 0 -- 결과를 보면 예상되는 대로 error 가 발생되지만, 적절히 error 에 대해 handling 하지는 않고 있다.
 
--- NOTE: 다른 프로그래밍 언어와는 다르게, SQL 에서 error 발생해도 그 다음 구문이 계속 실행된다는 점이다. (결과 RESULT 가 보여지고 있다)
+-- NOTE: 다른 프로그래밍 언어와는 다르게, SQL 에서 error 발생해도 
+-- 그 다음 구문이 계속 실행된다는 점이다. (결과 RESULT 가 보여지고 있다)
 /* ------- error hanling 적용 ------ */
 -------------------------------------------------
--- RaiseError()
+-- 1. RaiseError()
 -------------------------------------------------
 -- 다음과 같이 error handling 코드를 삽입하여 수정 
-ALTER PROCEDURE spDivideTwoNumber @Number1 INT
+ALTER PROCEDURE spDivideTwoNumber 
+	@Number1 INT
     , @Number2 INT
 AS
 BEGIN
@@ -38,13 +40,17 @@ BEGIN
     BEGIN
         RAISERROR (
                 'Second Number Cannot be zero'
-                , 16
+                , 16 -- 0-10: info   /11 -20:error  /21-30: critical
                 , 1
                 ) -- system error message 를 리턴하는 함수
             -- RAISERROR('Error Message', ErrorSeverity, ErrorState)
             -- Error Severity 는 16 번 Error State 는 1 번으로 setting 하는 이유
-            -- Error Severity: When we are returning any custom errors in SQL Server, we need to set the ErrorSeverity level as 16, which indicates this is a general error and this error can be corrected by the user. In our example, the error can be corrected by the user by giving a nonzero value for the second parameter
-            -- Error State: The ErrorState is also an integer value between 1 and 255. The RAISERROR() function can only generate custom errors if you set the Error State value between 1 to 127.
+            -- Error Severity: When we are returning any custom errors in SQL Server, 
+				-- we need to set the ErrorSeverity level as 16, 
+				-- which indicates this is a general error and this error can be corrected by the user. 
+				-- In our example, the error can be corrected by the user by giving a nonzero value for the second parameter. 
+            -- Error State: The ErrorState is also an integer value between 1 and 255. 
+			-- The RAISERROR() function can only generate custom errors if you set the Error State value between 1 to 127.
     END
     ELSE
     BEGIN
@@ -55,8 +61,32 @@ BEGIN
 END
 
 -- test
-EXEC spDivideTwoNumber 100
-    , 0
+EXEC spDivideTwoNumber 100, 0
+
+-------------------------------------------------
+-- RaiseError() 추가
+-------------------------------------------------
+--TIP: 추가로 message_id 와 message text 확인
+select * from sys.messages
+
+
+-- TIP: 사용자 정의 메시지를 추가 (위의 table 에 값을 입력)
+sys.sp_addmessage  @msgnum = 50001, 
+				   @severity = 11, 
+				   @msgtext = 'Because of something....you cannot do it'
+
+-- test
+RAISERROR(50001, 11, 1)
+
+-- 삭제
+sys.sp_dropmessage  @msgnum = 50001
+
+-- 한글 지정
+-- ref: https://learn.microsoft.com/ko-kr/sql/relational-databases/system-stored-procedures/sp-addmessage-transact-sql?view=sql-server-ver16
+
+-- MS SQL Error code
+-- ref: https://thankyeon.tistory.com/71
+
 
 -------------------------------------------------
 -- @@error  전역 변수 이용하기
@@ -178,77 +208,89 @@ VALUES (
     )
 GO
 
+select * from test.Product
+select * from test.ProductSales
 -- sp 생성
-CREATE PROCEDURE spSellProduct @ProductID INT
+CREATE PROCEDURE spSellProduct 
+	  @ProductID INT
     , @QuantityToSell INT
 AS
 BEGIN
     -- 팔려고 하는 상품의 존재 여부 체크
-    -- TODO
-
-
-    -- 팔려고 하는 상품의 stock 체크
-    DECLARE @StockAvailable INT
-
-    SELECT @StockAvailable = QuantityAvailable
-    FROM test.Product
-    WHERE ProductId = @ProductId
-
-    -- 상품 체크 validation
-    IF (@StockAvailable < @QuantityToSell)
-    BEGIN
-        -- 참고로 THROW 구문을 사용할 수도 있다.
-        RAISERROR (
-                'Enough Stock is not available'
+	declare @cnt int
+	select @cnt = count(*) from test.Product
+	if @cnt < 1
+		RAISERROR (
+                'no product'
                 , 16
                 , 1
                 )
-    END
-    ELSE
-    BEGIN
-        BEGIN TRANSACTION
+	else
+	begin	
+		-- 팔려고 하는 상품의 stock 체크
+		DECLARE @StockAvailable INT
 
-        -- 재고량 update
-        UPDATE test.Product
-        SET QuantityAvailable = (QuantityAvailable - @QuantityToSell)
-        WHERE ProductID = @ProductID
+		SELECT @StockAvailable = QuantityAvailable
+		FROM test.Product
+		WHERE ProductId = @ProductId
 
-        -- 별도로 Identity 값으로 지정된 것이 아니기 때문에 다음과 같이 Max 값을 얻어야 함
-        DECLARE @MaxProductSalesId INT
+		-- 상품 체크 validation
+		IF (@StockAvailable < @QuantityToSell)
+		BEGIN
+			-- 참고로 THROW 구문을 사용할 수도 있다.
+			RAISERROR (
+					'Enough Stock is not available'
+					, 16
+					, 1
+					)
+		END
+		ELSE -- stock 준비되어 있음
+		BEGIN
+			BEGIN TRANSACTION
 
-        SELECT @MaxProductSalesId = CASE 
-                WHEN MAX(ProductSalesId) IS NULL
-                    THEN 0
-                ELSE MAX(ProductSalesId)
-                END
-        FROM test.ProductSales
+			-- 재고량 update
+			UPDATE test.Product
+			SET QuantityAvailable = (QuantityAvailable - @QuantityToSell)
+			WHERE ProductID = @ProductID
 
-        SET @MaxProductSalesId = @MaxProductSalesId + 1
+			-- 별도로 Identity 값으로 지정된 것이 아니기 때문에 다음과 같이 Max 값을 얻어야 함
+			DECLARE @MaxProductSalesId INT
 
-        -- ProductSales table 에 값을 입력
-        INSERT INTO test.ProductSales (
-            ProductSalesId
-            , ProductId
-            , QuantitySold
-            )
-        VALUES (
-            @MaxProductSalesId
-            , @ProductId
-            , @QuantityToSell
-            )
+			SELECT @MaxProductSalesId = CASE 
+					WHEN MAX(ProductSalesId) IS NULL
+						THEN 0
+					ELSE MAX(ProductSalesId)
+					END
+			FROM test.ProductSales
 
-        -- transaction 의 commit 혹은 rollback 여부를 결정
-        IF (@@ERROR <> 0)
-        BEGIN
-            ROLLBACK TRANSACTION
-            PRINT 'Rolled Back the Transaction'
-        END
-        ELSE
-        BEGIN
-            COMMIT TRANSACTION
-            PRINT 'Committed the Transaction'
-        END
-    END
+			SET @MaxProductSalesId = @MaxProductSalesId + 1
+
+
+			-- ProductSales table 에 값을 입력
+			INSERT INTO test.ProductSales (
+				ProductSalesId
+				, ProductId
+				, QuantitySold
+				)
+			VALUES (
+				@MaxProductSalesId
+				, @ProductId
+				, @QuantityToSell
+				)
+
+			-- transaction 의 commit 혹은 rollback 여부를 결정
+			IF (@@ERROR <> 0)
+			BEGIN
+				ROLLBACK TRANSACTION
+				PRINT 'Rolled Back the Transaction'
+			END
+			ELSE
+		BEGIN
+				COMMIT TRANSACTION
+				PRINT 'Committed the Transaction'
+			END
+		END
+	END
 END
 
 -- test

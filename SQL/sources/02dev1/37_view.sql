@@ -1,13 +1,18 @@
 /*********************************
-view
+view: virtual table
+목적: "리포팅" 
 *********************************/
+
+select * from vTemp
+
 /*-------------------------------
 save "query" (not result)
-NOTE: they do "not" improve the underlying query performance.
+NOTE: they do "not" improve the underlying query performance. (성능 향상에는 영향 없다)
 
 advantages
 1. security 2.simplicity 3.consistency
 --------------------------------*/
+
 
 CREATE VIEW sales.product_info
 AS
@@ -41,11 +46,11 @@ SELECT
     year(order_date),
     month(order_date),
     day(order_date),
-    concat(
+    concat( -- 문자열 결합
         first_name,
         ' ',
         last_name
-    ),
+    ), -- first_name + ' ' + last_name
     p.product_id,
     product_name,
     quantity * i.list_price
@@ -74,19 +79,22 @@ ORDER BY
 
 --------------------------------------
 -- aggregate functions 적용된 결과 셋을 view 와 함께 적용
+-- 계산 함수: avg, count, min, max, sum
 --------------------------------------
-CREATE VIEW sales.staff_sales (
+ALTER VIEW sales.staff_sales (
         first_name, 
         last_name,
         year, 
-        amount
+        amount,
+		cnt
 )
 AS 
     SELECT 
         first_name,
         last_name,
         YEAR(order_date),
-        SUM(list_price * quantity) amount
+        SUM(list_price * quantity) amount,
+		COUNT(*) cnt
     FROM
         sales.order_items i
     INNER JOIN sales.orders o
@@ -141,7 +149,7 @@ SELECT
 	OBJECT_SCHEMA_NAME(o.object_id) schema_name,
 	o.name
 FROM
-	sys.objects o
+	sys.objects o -- sys 로 시작하는 table: system table
 WHERE
 	o.type = 'V';
 
@@ -149,7 +157,7 @@ WHERE
 sp_helptext 'sales.staff_sales'
 
 --------------------------------------
--- Indexed View == Materialized View
+-- "Indexed View" (microsoft) == Materialized View (oracle)
 -- 결과 셋 저장
 --------------------------------------
 /*-------------------------------
@@ -162,7 +170,8 @@ sp_helptext 'sales.staff_sales'
 --------------------------------*/
 
 CREATE VIEW production.product_master
-WITH SCHEMABINDING -- binding to underlying tables (주의: index 를 생성하기 전까지는 아직 physical 하게 결과셋을 저장했다고 볼 수 없다. 아래의 IO 결과 참조)
+WITH SCHEMABINDING -- binding to underlying tables 
+--(주의: index 를 생성하기 전까지는 아직 physical 하게 결과셋을 저장했다고 볼 수 없다. 아래의 IO 결과 참조)
 AS 
 SELECT
     product_id,
@@ -188,8 +197,7 @@ SELECT
 FROM
     production.product_master
 ORDER BY
-    product_name;
-GO 
+    product_name; 
 
 /*-------------------------------
 -- I/O 확인
@@ -202,6 +210,16 @@ GO
 -- 위에서 알 수 있듯이, view 에 대한 I/O 는 products, categories 그리고 brands 라는 테이블을 조회한다.
 -- 즉 아직은 view 자체가 일반 view 를 조회하는 것처럼 관련 있는 table 들을 scan 하고 있다.
 --------------------------------*/
+
+-- before
+Table 'products'. Scan count 1, logical reads 5, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'categories'. Scan count 1, logical reads 2, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'brands'. Scan count 1, logical reads 2, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+
+-- after
+Table 'Worktable'. Scan count 0, logical reads 0, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'product_master'. Scan count 1, logical reads 6, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+
 
 -- 다음과 같이 index 를 적용할 때에 "비로소" physical 하게 결과셋을 저장한다.
 -- apply index to the view
@@ -231,6 +249,18 @@ GO
 /************************************************
 Assignment 1
 
-Production.products 와 Production.brands 를 통해 제품의 brand_name 과 list_price 의 평균 값을 가져오되, 조건은 2018 년도 모델에 한정되는 결과를 가져오는 query 를 작성하고 이를 view 로 작성한다.
+Production.products 와 Production.brands 를 통해 제품의 brand_name 과 list_price 의 평균 값을 가져오되, 
+조건은 2018 년도 모델에 한정되는 결과를 가져오는 query 를 작성하고 이를 view 로 작성한다.
+
+create view production.vwGetAvgPriceOfBrand
+as
+	select t1.brand_name, avg(t2.list_price) as 'brand_avgPrice'
+	from production.brands t1 inner join production.products t2
+	on t1.brand_id = t2.brand_id
+	where t2.model_year = 2018
+	group by t1.brand_name
+
+-- test
+select * from production.vwGetAvgPriceOfBrand
 
 *************************************************/
