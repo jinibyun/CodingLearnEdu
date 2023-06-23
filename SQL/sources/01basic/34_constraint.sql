@@ -237,5 +237,17 @@ ALTER TABLE test.products
 NO CHECK CONSTRAINT valid_price;
 
 
+/************************************************
+Assignment 12
 
+두 개의 table 을 구성한다. (parent, child)
+Genre talbe 과 Movie table (구체적인 칼럼 정의 생략). Genre table 이 parent 이고 Movie table 이 Genre Id 를 참조하는 child table 이다.
+
+- Genre table 의 id 는 identity 이고 PK 여야 한다.
+- Genre table 의 name 는 unique 속성이 적용되어야 한다.
+- Movie table 의 연도 칼럼이 있다고 가정한다. 이때 연도는 1920 이라는 숫자 이상이어야 한다. - chekc 속성
+- 두 개의 table 작성 후 적절히 genre table 과 movie table 에 2-6 개의 data 를 테스트용으로 각각 삽입한다. (가능하다면 앞서 배웠던 begin tran 을 최대한 활용해 본다)
+- 그 후에 참조 "되는" genre 의 하나를 지우게 되면 에러가 나게 된다. 이를 직접 확인한다. (Referential Integrity 확인)
+
+*************************************************/
 

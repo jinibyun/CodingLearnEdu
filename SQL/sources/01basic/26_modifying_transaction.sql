@@ -41,3 +41,44 @@ FROM invoice_items
 WHERE invoice_id = 1);
 
 COMMIT;
+
+/************************************************
+Assignment 9
+
+위의 begin tran, commit tran 그리고 rollback tran 을 이용하여 다음의 insert 구문과 update 구문을 정의한다.
+
+```
+INSERT INTO sales.promotions (
+    promotion_name,
+    discount,
+    start_date,
+    expired_date
+)
+VALUES
+    (
+        '2023 Summer Promotion',
+        0.15,
+        '20230601',
+        '20230901'
+    ),
+    (
+        '2023 Fall Promotion',
+        0.20,
+        '20231001',
+        '20231101'
+    ),
+    (
+        '2023 Winter Promotion',
+        0.25,
+        '20231201',
+        '20230101'
+    );
+```
+
+
+```
+update sales.promotions
+set discount = discount + 1.00
+where start_date > '20221231'
+``` 
+*************************************************/

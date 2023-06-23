@@ -99,3 +99,26 @@ FROM
         ON s.category_id = c.category_id
 ORDER BY 
     c.category_name;
+
+
+/************************************************
+Assignment 7
+
+Assignment 2 (6_filtering_where.sql file) 에서 작성한 sub query 구문을 위의 common table expression 구문을 이용하여 재 구성하기
+
+*************************************************/
+WITH cte_salesOrders AS ( 
+    select * from sales.orders
+    where customer_id IN
+    (
+        select customer_id from sales.customers 
+        where state = 'NY' 
+        and phone is not null 
+        and email not like '%@hotmail.com' and email not like '%@gmail.com'
+    )
+    and order_date between '2017-01-01' and '2017-12-03'
+    -- order by order_date
+
+)
+SELECT * FROM cte_salesOrders
+order by order_date;

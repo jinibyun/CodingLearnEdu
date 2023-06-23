@@ -148,16 +148,9 @@ VALUES
     (6,100000,NULL),
     (7,120000,NULL);
 
---------------------------------------
--- sales target 이 없는 신입 사원의 경우: 0.1 즉 10% 기본으로 적용하기
---------------------------------------
-UPDATE 
-    sales.commissions
-SET  
-    sales.commissions.commission = 
-        c.base_amount  * COALESCE(t.percentage,0.1) -- Coalesce : The COALESCE() function returns the first non-null value in a list
-FROM  
-    -- select t.percentage from -- update 실행 전에 미리 검색해 볼 수 있다.
-    sales.commissions c
-    LEFT JOIN sales.targets t 
-        ON c.target_id = t.target_id;
+/************************************************
+Assignment 8
+
+sales target 이 없는 신입 사원의 경우: 0.1 즉 10% 기본으로 적용하기
+
+*************************************************/

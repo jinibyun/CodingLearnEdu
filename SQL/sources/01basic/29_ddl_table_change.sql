@@ -102,3 +102,27 @@ DROP COLUMN price;
 -- resolution: 제약 조건을 먼저 삭제 한다. 그후에 위의 price column 을 지우면 실행된다
 ALTER TABLE sales.price_lists
 DROP CONSTRAINT ck_positive_price;
+
+
+
+/************************************************
+Assignment 10
+
+1. create db: 이름은 TestDB2
+2. create schema: 이름은 production
+3. create table: 이름은 production.Orders
+    - production.Orders table 의 상세 칼럼 요건
+    1. id   type: int   constraints: identity 와 PK
+    2. name     type: varchar(200)   constraints: not null    
+    3. order_date     type: datetime2   constraints: not null
+    4. order_count     type: int   constraints: not null
+    5. customer_id      type: int  constraints: not null
+4. production.Orders 테이블에 임시로 3-4 개의 data 를 insert
+5. 그 후에 새롭게 두 개의 columns 를 새롭게 추가 (alter 구문)
+    1. order_status     type: char(4)       null,
+    2. product_id       type: int           null
+
+6. production.Orders 테이블에 추가된 columns 의 값을 update 구문으로 채운다
+7. 그 후에 새롭게 추가된 column (null 허용된 칼럼)의 constraints 를 not null 로 바꾼다.
+
+*************************************************/

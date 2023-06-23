@@ -60,4 +60,12 @@ benefit of synonym
 3. 개체 이름이 복잡하다면 개발의 편이성을 위해 단순화 할 수 있게 할 수 있음
 --------------------------------*/
 
+/************************************************
+Assignment 11
 
+Assingment 10 을 작성했다면, TestDB2.production.Orders 테이블이 생성됐을 것이다.
+이에 대한 synonym 을 "BikeStores 라는 DB 에서" 만든 후 그 synonym 이름으로 query를 던지도록 한다.
+
+synonym 의 이름은 productionOrders 라고 한다. 별도로 schema 정보는 붙이지 않는다.
+
+*************************************************/
