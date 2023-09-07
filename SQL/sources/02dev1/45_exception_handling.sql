@@ -2,7 +2,7 @@
 exception handling
 *********************************/
 /* ------- error hanling 이 없는 sp ------ */
-ALTER PROCEDURE spDivideTwoNumber (
+CREATE PROCEDURE spDivideTwoNumber (
     @Number1 INT
     , @Number2 INT
     )
@@ -12,6 +12,7 @@ BEGIN
 
     SET @Result = 0
     SET @Result = @Number1 / @Number2
+
 
     PRINT 'RESULT IS :' + CAST(@Result AS VARCHAR)
 END
@@ -24,7 +25,7 @@ EXEC spDivideTwoNumber 100
 -- 그 다음 구문이 계속 실행된다는 점이다. (결과 RESULT 가 보여지고 있다)
 /* ------- error hanling 적용 ------ */
 -------------------------------------------------
--- 1. RaiseError()
+-- 1. RaiseError() : 일부러 error 를 발생시키는 코드
 -------------------------------------------------
 -- 다음과 같이 error handling 코드를 삽입하여 수정 
 ALTER PROCEDURE spDivideTwoNumber 

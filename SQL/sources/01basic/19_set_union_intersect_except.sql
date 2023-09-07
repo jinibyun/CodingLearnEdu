@@ -1,5 +1,7 @@
-/*********************************
+﻿/*********************************
 union, intersect, except
+
+join 구문을 편하게 사용하기 위한 연산자
 *********************************/
 
 -- result
@@ -27,7 +29,25 @@ SELECT
     last_name
 FROM
     sales.customers;
--- 1455
+
+-- 중복된 데이타 검색
+select t1.first_name, t1.last_name, count(*)
+from 
+	( 
+		SELECT
+			first_name,
+			last_name
+		FROM
+			sales.staffs
+		UNION ALL -- compare with UNION
+		SELECT
+			first_name,
+			last_name
+		FROM
+			sales.customers
+	) t1
+group by t1.first_name, t1.last_name
+having count(*) > 1
 
 
 --------------------------------------

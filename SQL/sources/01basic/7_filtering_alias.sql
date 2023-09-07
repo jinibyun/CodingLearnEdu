@@ -1,12 +1,15 @@
-/*********************************
-alias
+﻿/*********************************
+alias - 별칭 
 *********************************/
 
 --------------------------------------
 -- column alias - heading
 --------------------------------------
 SELECT
-    first_name + ' ' + last_name AS full_name
+	-- + 의 의미 : 문자열 결합
+    -- last_name + ', ' + first_name AS full_name -- alias
+	-- last_name + ', ' + first_name full_name -- alias
+	last_name + ', ' + first_name 'full_name' -- alias
 FROM
     sales.customers
 ORDER BY

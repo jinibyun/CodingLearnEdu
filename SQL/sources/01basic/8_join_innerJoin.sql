@@ -8,11 +8,13 @@ inner join
 SELECT
     product_name,
     category_name,
-    list_price
+    list_price,
+	brand_id
 FROM
-    production.products p
-INNER JOIN production.categories c 
-    ON c.category_id = p.category_id
+    production.products t1
+    INNER JOIN 
+	production.categories t2
+ON t1.category_id = t2.category_id -- on 은 Join 성립 조건
 ORDER BY
     product_name DESC;
 
@@ -25,9 +27,11 @@ SELECT
     brand_name,
     list_price
 FROM
-    production.products p
-INNER JOIN production.categories c ON c.category_id = p.category_id
-INNER JOIN production.brands b ON b.brand_id = p.brand_id
+	production.products p
+INNER JOIN production.categories c 
+	ON c.category_id = p.category_id
+INNER JOIN production.brands b 
+	ON b.brand_id = p.brand_id
 ORDER BY
     product_name DESC;
 
@@ -44,3 +48,25 @@ Assignment 3
 
 sub query 를 통해 작성했던 쿼리를 위의 inner join 구문을 이용하여 바꾼다.
 *************************************************/
+
+select * from sales.orders
+where customer_id in 
+(
+    select customer_id
+    from sales.customers     
+    where state = 'NY' 
+    and phone is not null
+    and email not like '%@gmail.com%' and email not like '%@hotmail.com%'
+)
+and order_date > '2016-12-31' and order_date < '2018-01-01'
+order by order_date ASC
+---->>
+
+select s.* from sales.customers c
+inner join sales.orders s
+on c.customer_id = s.customer_id -- inner join 조건
+where c.state = 'NY' 
+    and c.phone is not null
+    and c.email not like '%@gmail.com%' and c.email not like '%@hotmail.com%'
+	and s.order_date > '2016-12-31' and s.order_date < '2018-01-01'
+order by s.order_date ASC

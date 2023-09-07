@@ -5,7 +5,7 @@ alter table
 CREATE TABLE sales.quotations (
     quotation_no INT IDENTITY PRIMARY KEY,
     valid_from DATE NOT NULL,
-    valid_to DATE NOT NULL
+    valid_to DATE NOT NULL,
 );
 
 --------------------------------------
@@ -41,14 +41,16 @@ VALUES
 --------------------------------------
 -- column type change
 --------------------------------------
-ALTER TABLE t1 ALTER COLUMN c VARCHAR (2);
+ALTER TABLE t1 
+ALTER COLUMN c VARCHAR (2);
 
 -- test
 INSERT INTO t1
 VALUES ('@');
 
 -- error
-ALTER TABLE t1 ALTER COLUMN c INT;
+ALTER TABLE t1 
+ALTER COLUMN c INT;
 
 -- Conversion failed when converting the varchar value '@' to data type int.
 -- The statement has been terminated.
@@ -67,7 +69,8 @@ VALUES
     ('Column')
 
 -- change size
-ALTER TABLE t2 ALTER COLUMN c VARCHAR (50);
+ALTER TABLE t2 
+ALTER COLUMN c VARCHAR (50);
 
 --------------------------------------
 -- alter table drop column
@@ -76,11 +79,11 @@ ALTER TABLE t2 ALTER COLUMN c VARCHAR (50);
 CREATE TABLE sales.price_lists(
     product_id int,
     valid_from DATE,
-    price DEC(10,2) NOT NULL CONSTRAINT ck_positive_price CHECK(price >= 0),
+    price DEC(10,2) NOT NULL CONSTRAINT ck_positive_price CHECK(price >= 0), -- constraint 는 추가 적인 validation 담당 조건
     discount DEC(10,2) NOT NULL,
     surcharge DEC(10,2) NOT NULL,
     note VARCHAR(255),
-    PRIMARY KEY(product_id, valid_from)
+    PRIMARY KEY(product_id, valid_from) -- 두 개 이상의 칼럼을 묶어서 PK set 으로 만드는 방법
 ); 
 
 --------------------------------------

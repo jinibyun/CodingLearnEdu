@@ -1,9 +1,8 @@
 /*********************************
 view: virtual table
-목적: "리포팅" 
+목적: "리포팅" (비정규화)
 *********************************/
 
-select * from vTemp
 
 /*-------------------------------
 save "query" (not result)
@@ -13,6 +12,7 @@ advantages
 1. security 2.simplicity 3.consistency
 --------------------------------*/
 
+-- DDL: CREATE, ALTER ,DROP
 
 CREATE VIEW sales.product_info
 AS
@@ -33,9 +33,9 @@ SELECT * FROM sales.product_info;
 -- anoter example
 --------------------------------------
 CREATE VIEW sales.daily_sales ( -- 별도로 칼럼 이름을 지정할 수도 있다.
-    year,
-    month,
-    day,
+    y,
+    m,
+    d,
     customer_name,
     product_id,
     product_name,
@@ -54,6 +54,7 @@ SELECT
     p.product_id,
     product_name,
     quantity * i.list_price
+
 FROM
     sales.orders AS o
     INNER JOIN
@@ -72,16 +73,16 @@ SELECT
 FROM 
     sales.daily_sales
 ORDER BY 
-    year, 
-    month, 
-    day, 
+    y, 
+    m, 
+    d, 
     customer_name;
 
 --------------------------------------
 -- aggregate functions 적용된 결과 셋을 view 와 함께 적용
 -- 계산 함수: avg, count, min, max, sum
 --------------------------------------
-ALTER VIEW sales.staff_sales (
+CREATE VIEW sales.staff_sales (
         first_name, 
         last_name,
         year, 
@@ -93,6 +94,7 @@ AS
         first_name,
         last_name,
         YEAR(order_date),
+
         SUM(list_price * quantity) amount,
 		COUNT(*) cnt
     FROM
@@ -145,6 +147,7 @@ DROP VIEW IF EXISTS
 --------------------------------------
 -- TIP: 하나의 utility 처럼 알고 있으면 편함
 -- ref: https://learn.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-objects-transact-sql?view=sql-server-ver16
+
 SELECT 
 	OBJECT_SCHEMA_NAME(o.object_id) schema_name,
 	o.name
@@ -154,7 +157,7 @@ WHERE
 	o.type = 'V';
 
 -- TIP: view 구문을 알아내기 위한 방법 중 많이 사용
-sp_helptext 'sales.staff_sales'
+sp_helptext 'sales.product_info'
 
 --------------------------------------
 -- "Indexed View" (microsoft) == Materialized View (oracle)
@@ -211,21 +214,12 @@ ORDER BY
 -- 즉 아직은 view 자체가 일반 view 를 조회하는 것처럼 관련 있는 table 들을 scan 하고 있다.
 --------------------------------*/
 
--- before
-Table 'products'. Scan count 1, logical reads 5, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
-Table 'categories'. Scan count 1, logical reads 2, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
-Table 'brands'. Scan count 1, logical reads 2, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
-
--- after
-Table 'Worktable'. Scan count 0, logical reads 0, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
-Table 'product_master'. Scan count 1, logical reads 6, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
-
 
 -- 다음과 같이 index 를 적용할 때에 "비로소" physical 하게 결과셋을 저장한다.
 -- apply index to the view
 CREATE UNIQUE CLUSTERED INDEX 
     ucidx_product_id 
-ON production.product_master(product_id);
+ON production.product_master(product_id); -- schema binding 이 되어 있는 view
 
 -- test
 SELECT 

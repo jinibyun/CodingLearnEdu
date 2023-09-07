@@ -1,4 +1,4 @@
-/*********************************
+﻿/*********************************
 full outer join
 *********************************/
 
@@ -7,8 +7,9 @@ full outer join
 --------------------------------------
 
 -- prep
-CREATE SCHEMA pm;
+CREATE SCHEMA pm -- namespace 로 이해. 논리적인 하나의 이름
 GO
+
 
 CREATE TABLE pm.projects(
     id INT PRIMARY KEY IDENTITY,
@@ -42,6 +43,10 @@ VALUES
     ('Jack Daniel', null)
 GO
 
+select * from pm.projects
+select * from pm.members
+
+
 -- test: members who participate in projects, members who do not participate in any projects, and projects which do not have any members
 SELECT 
     m.name member, 
@@ -60,7 +65,8 @@ FROM
     FULL OUTER JOIN pm.projects p 
         ON p.id = m.project_id
 WHERE
-    m.id IS NULL OR
+    m.id is NULL 
+	OR
     P.id IS NULL;
 
 

@@ -66,19 +66,20 @@ INSERT INTO sales.taxes(state,state_tax_rate,avg_local_tax_rate,max_local_tax_ra
 INSERT INTO sales.taxes(state,state_tax_rate,avg_local_tax_rate,max_local_tax_rate) VALUES('Wyoming',0.04,0.01,0.02);
 INSERT INTO sales.taxes(state,state_tax_rate,avg_local_tax_rate,max_local_tax_rate) VALUES('D.C.',0.05,0,0);
 
+select * from sales.taxes
 --------------------------------------
 -- update example
 --------------------------------------
 UPDATE sales.taxes
-SET updated_at = GETDATE();
+SET updated_at = GETDATE(); -- = 표현   1. 같다   2. 대입    getdate:  system 날짜 반환
 
 --------------------------------------
 -- update multiple columns
 --------------------------------------
 UPDATE sales.taxes
-SET max_local_tax_rate += 0.02,
-    avg_local_tax_rate += 0.01
-WHERE
+SET max_local_tax_rate += 0.02, -- ax_local_tax_rate = ax_local_tax_rate + 0.02
+    avg_local_tax_rate += 0.001
+WHERE -- 조건
     max_local_tax_rate = 0.01;
 
 
@@ -128,6 +129,10 @@ VALUES
     (4,900000,4),
     (5,950000,5);
 
+
+select * from sales.targets;
+select * from sales.commissions;
+
 --------------------------------------
 -- to use update join, calculate the commissions of all sales staffs based on their sales targets
 --------------------------------------
@@ -136,6 +141,7 @@ UPDATE
 SET
     sales.commissions.commission = 
         c.base_amount * t.percentage
+--select *
 FROM 
     sales.commissions c
     INNER JOIN sales.targets t
@@ -148,9 +154,18 @@ VALUES
     (6,100000,NULL),
     (7,120000,NULL);
 
+select * from sales.targets
+select * from sales.commissions
+
 /************************************************
 Assignment 8
 
 sales target 이 없는 신입 사원의 경우: 0.1 즉 10% 기본으로 적용하기
 
 *************************************************/
+UPDATE
+    sales.commissions
+SET
+    sales.commissions.commission = 
+        base_amount * 0.1
+WHERE target_id is null;

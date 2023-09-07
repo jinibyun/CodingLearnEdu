@@ -7,6 +7,23 @@ CTE: common table expression
  NOTE: very similar to subquery. but it is more readable
 --------------------------------*/
 
+select t1.*
+from
+(
+	SELECT    -- it is like "subquery"
+			first_name + ' ' + last_name 'name', 
+			SUM(quantity * list_price * (1 - discount)) 'sumOfX',
+			YEAR(order_date) 'orderYear'
+		FROM    
+			sales.orders o
+		INNER JOIN sales.order_items i ON i.order_id = o.order_id
+		INNER JOIN sales.staffs s ON s.staff_id = o.staff_id
+		GROUP BY 
+			first_name + ' ' + last_name,
+			year(order_date)
+) t1
+where t1.name like 'k%'
+
 --------------------------------------
 -- the sales amounts by sales staffs in 2018
 --------------------------------------
@@ -107,18 +124,3 @@ Assignment 7
 Assignment 2 (6_filtering_where.sql file) 에서 작성한 sub query 구문을 위의 common table expression 구문을 이용하여 재 구성하기
 
 *************************************************/
-WITH cte_salesOrders AS ( 
-    select * from sales.orders
-    where customer_id IN
-    (
-        select customer_id from sales.customers 
-        where state = 'NY' 
-        and phone is not null 
-        and email not like '%@hotmail.com' and email not like '%@gmail.com'
-    )
-    and order_date between '2017-01-01' and '2017-12-03'
-    -- order by order_date
-
-)
-SELECT * FROM cte_salesOrders
-order by order_date;

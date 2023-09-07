@@ -1,0 +1,7 @@
+﻿//_01_createTable.cs 부터 _04_deleteRecord.cs 를 참조로 해서 다음과 같이 새로운 파일을 만들어서 비슷한 업무를 수행한다.
+
+// file name: _07_assignmnet_02.cs
+// 새롭게 생성할 table 이름: courses (id, name, createdDate, startDate, endDate)
+// 별도로 세 네 개의 파일로 구성하는 것이 아니라, 하나의 파일안에서 table 을 생성하고, 데이타 입력, 조회, 삭제 하는 로직을 포함시키도록 한다.
+// 추가로 실행할 때는 사용자의 입력을 받아서 파라미터 값에 따라서 정의할 수도 있다. (편의상)
+

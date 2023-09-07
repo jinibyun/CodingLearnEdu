@@ -11,9 +11,9 @@ SELECT
     product_name,
     order_id
 FROM
-    production.products p
-LEFT OUTER JOIN sales.order_items o 
+     production.products p LEFT OUTER JOIN sales.order_items o -- left outer join 왼쪽에 참조 받는 table (parent table) 을 위치시킨다.
 ON o.product_id = p.product_id
+--where o.order_id is null
 ORDER BY
     order_id;
 
@@ -25,11 +25,11 @@ SELECT
     order_id
 FROM
     production.products p
-LEFT JOIN sales.order_items o ON o.product_id = p.product_id
+LEFT JOIN sales.order_items o ON o.product_id = p.product_id -- outer 라는 단어 생략 가능
 WHERE order_id IS NULL
 
 --------------------------------------
--- more than tables
+-- more than two tables
 --------------------------------------
 SELECT
     p.product_name,
@@ -70,4 +70,14 @@ sales.orders (주문) 레코드는 sales.staffs (점원) 레코드를 바탕으�
 2. outer join 으로 진행한 바로 위의 query 를 inner join 으로 "바꾸지 않고", 그대로 조건만 바꿔서 주문정보가 "있는" 점원 (staff) 정보를 조회 한다.
 
 *************************************************/
+-- 1
+select s.*
+from sales.staffs s left outer join sales.orders o
+on o.staff_id = s.staff_id
+where o.order_id is null
 
+-- 2. 
+select s.*
+from sales.staffs s left outer join sales.orders o
+on o.staff_id = s.staff_id
+where o.order_id is not null

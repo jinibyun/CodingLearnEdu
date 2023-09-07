@@ -16,6 +16,7 @@ CREATE TABLE sales.promotions (
 --------------------------------------
 -- note: column with identity cannot be inserted
 INSERT INTO sales.promotions (
+	--	promotion_id, 안되는 이유: identity  속성을 가진 칼럼은 SQL 서버가 자동으로 번호를 입력하기 때문.
     promotion_name,
     discount,
     start_date,
@@ -29,6 +30,7 @@ VALUES
         '20180901'
     );
 
+select * from sales.promotions
 --------------------------------------
 -- inserted table 응용
 --------------------------------------
@@ -37,7 +39,7 @@ INSERT INTO sales.promotions (
     discount,
     start_date,
     expired_date
-) OUTPUT inserted.promotion_id,
+) OUTPUT inserted.promotion_id, -- inserted 라고 하는 "특별한" 시스템 테이블 (자료 입력 전에 임시로 저장되는 table. 자료 입력 후에 자동으로 비워짐)
  inserted.promotion_name,
  inserted.discount,
  inserted.start_date,
@@ -95,13 +97,15 @@ CREATE TABLE sales.addresses (
 -- insert into select
 --------------------------------------
 INSERT INTO sales.addresses (street, city, state, zip_code) 
-SELECT
-    street,
-    city,
-    state,
-    zip_code
-FROM
-    sales.customers
-ORDER BY
-    first_name,
-    last_name; 
+	SELECT
+		street,
+		city,
+		state,
+		zip_code
+	FROM
+		sales.customers
+	ORDER BY
+		first_name,
+		last_name; 
+
+		select * from sales.addresses

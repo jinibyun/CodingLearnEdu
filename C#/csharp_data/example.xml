@@ -1,0 +1,39 @@
+<DepartmentEmployeesData>
+  <Department Id="101">
+    <Name>IT</Name>
+    <Location>Seoul</Location>
+  </Department>
+  <Department Id="102">
+    <Name>HR</Name>
+    <Location>Pusan</Location>
+  </Department>
+  <Department Id="103">
+    <Name>Sales</Name>
+    <Location>Inchon</Location>
+  </Department>
+  <Employee Id="1001">
+    <Name>AAAAA</Name>
+    <Gender>Male</Gender>
+    <DepartmentId>101</DepartmentId>
+  </Employee>
+  <Employee Id="1002">
+    <Name>BBBBB</Name>
+    <Gender>Male</Gender>
+    <DepartmentId>101</DepartmentId>
+  </Employee>
+  <Employee Id="1003">
+    <Name>CCCCC</Name>
+    <Gender>Female</Gender>
+    <DepartmentId>102</DepartmentId>
+  </Employee>
+  <Employee Id="1004">
+    <Name>DDDDD</Name>
+    <Gender>Male</Gender>
+    <DepartmentId>102</DepartmentId>
+  </Employee>
+  <Employee Id="1005">
+    <Name>EEEEE</Name>
+    <Gender>Female</Gender>
+    <DepartmentId>103</DepartmentId>
+  </Employee>
+</DepartmentEmployeesData>

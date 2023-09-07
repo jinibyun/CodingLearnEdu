@@ -83,9 +83,9 @@ ORDER BY
 -- 2. Date Function
 --------------------------------------
 -- getdate()
-SELECT GETDATE() current_date_time;
+SELECT GETDATE() 'current_date_time';
 
-SELECT CONVERT(DATE, GETDATE()) currentDate;
+SELECT CONVERT(DATE, GETDATE()) currentDate; -- convert :  type 변환 함수 (cast 함수와 같음)
 
 -- datepart()
 SELECT DATEPART(year, shipped_date) [year], 
@@ -118,15 +118,22 @@ GROUP BY
 ORDER BY [day];    
 
 
+
+declare @i int = 10
+select case 
+	     when @i > 10 then 'big number'
+		 when @i = -1 then 'negative number'
+		 else 'small number'
+	   end
+
 -- Datediff()
 SELECT
     order_id, 
     required_date, 
     shipped_date,
 	--DATEDIFF(day, required_date, shipped_date)
-    CASE
-        WHEN DATEDIFF(day, required_date, shipped_date) < 0
-        THEN 'Late'
+    CASE -- select 구문안에 사용하는 if
+        WHEN DATEDIFF(day, required_date, shipped_date) < 0 THEN 'Late'
         ELSE 'OnTime'
     END shipment
 FROM 
@@ -141,7 +148,7 @@ SELECT
     order_id, 
     customer_id, 
     order_date,
-    DATEADD(year, 2, order_date) estimated_shipped_date
+    DATEADD(day, 2, order_date) estimated_shipped_date
 FROM 
     sales.orders
 WHERE 
@@ -157,7 +164,7 @@ ORDER BY
 
 -- searching
 DECLARE @haystack VARCHAR(100);  
-SELECT @haystack = 'This is a haystack';  
+SET @haystack = 'This is a haystack';  
 SELECT CHARINDEX('hays', @haystack);  
 
 -- left()
@@ -185,11 +192,12 @@ ORDER BY
 SELECT 
     first_name, 
     last_name, 
-    CONCAT_WS(
+    CONCAT_WS( -- 문자열 결합은 직접  + 기호를 이용할 수도 있다.
         ' ', 
         LOWER(first_name), 
         LOWER(last_name)
-    ) full_name_lowercase
+    ) full_name_lowercase,
+	LOWER(first_name) + ' ' + LOWER(last_name) newName
 FROM 
     sales.customers
 ORDER BY 
@@ -208,11 +216,13 @@ FROM
 
 -- 2
 SELECT 
-    value  
+    TRIM(value),
+	LEN(TRIM(value)),
+	LEN(value)
 FROM 
-    STRING_SPLIT('red,green,,blue', ',')
+    STRING_SPLIT('    red    ,    green    ,,    blue    ', ',')
 WHERE
-    TRIM(value) <> '';
+    TRIM(value) <> ''; -- TRIM: 칼럼 값의 좌우의 빈 공백을 지우는 함수
 
 -- 3
 -- prep
@@ -231,6 +241,7 @@ VALUES
 
 select * from sales.contacts
 -- test
+
 SELECT 
     first_name, 
     last_name,
@@ -251,7 +262,7 @@ FROM   STRING_SPLIT('Doe, John', ',');
 
 SELECT    
     product_name, 
-    PATINDEX('%2018%', product_name) position
+    PATINDEX('%2018%', product_name) position -- pattern 문자열 (예) %문자열%, [a-Z] , ...
 FROM    
     production.products
 WHERE 
@@ -264,10 +275,12 @@ SELECT
 	first_name, 
 	last_name, 
 	phone, 
-	REPLACE(REPLACE(phone, '(', ''), ')', '') phone_formatted
+	--REPLACE(REPLACE(phone, '(', ''), ')', '') phone_formatted
+	REPLACE(phone, '(', ''),
+	REPLACE(REPLACE(phone, '(', ''), ')', '')
 FROM    
 	sales.customers
-WHERE phone IS NOT NULL
+WHERE phone IS NOT NULL   
 ORDER BY 
 	first_name, 
 	last_name;
@@ -275,21 +288,36 @@ ORDER BY
 -- stuff() and replicate()
 DECLARE 
     @ccn VARCHAR(20) = '4882584254460197';
+SELECT 
+    STUFF(@ccn, 1, 15, 'XXXXXXXXXXXXXXX')
+
 
 SELECT 
-    STUFF(@ccn, 1, 15, REPLICATE('X', LEN(@ccn) - 4))
+    STUFF(@ccn, 1, 15, REPLICATE('X', LEN(@ccn) - 7))
     credit_card_no;
 
 -- substring()
 declare @email varchar(100)
-set @email = 'jinibyun@gmail.com'
+set @email = 'jinibyundfggfggfgg@kakakakaoemail.com'
 select CHARINDEX('@', @email)+1 -- 10
 select LEN(@email) -- 18 - 9
+
 select SUBSTRING(
         @email, 
-        10, 
-        18-9
+        CHARINDEX('@', @email)+1, 
+        LEN(@email)-CHARINDEX('@', @email)
     )
+
+
+SELECT 
+	email,
+    SUBSTRING(
+        email, 
+        CHARINDEX('@', email)+1, 
+        LEN(email)-CHARINDEX('@', email)
+    )
+FROM 
+    sales.customers
 
 SELECT 
     SUBSTRING(
@@ -297,15 +325,15 @@ SELECT
         CHARINDEX('@', email)+1, 
         LEN(email)-CHARINDEX('@', email)
     ) domain,
-    COUNT(email) domain_count
+    COUNT(*) domain_count
 FROM 
     sales.customers
 GROUP BY
     SUBSTRING(
-            email, 
-            CHARINDEX('@', email)+1, 
-            LEN(email)-CHARINDEX('@', email)
-        );
+        email, 
+        CHARINDEX('@', email)+1, 
+        LEN(email)-CHARINDEX('@', email)
+    );
 
 
 --------------------------------------
@@ -314,10 +342,12 @@ GROUP BY
 -- cast() 기능상 convert() 동일: cast() 를 사용하라고 권유
 
 
-SELECT CAST('2019-03-14' AS DATETIME) result;
+SELECT CAST('2019-03-14' AS DATETIME) result; -- convert() 와 동일
+SELECT CONVERT(DATETIME, '2019-03-14') result; 
 
 SELECT 
-    MONTH(order_date) month, 
+    MONTH(order_date) monthOfOrderDate, 
+	SUM(quantity * list_price * (1 - discount)),
     CAST(SUM(quantity * list_price * (1 - discount)) AS decimal(18,2)) amount
     
 FROM sales.orders o
@@ -327,12 +357,12 @@ WHERE
 GROUP BY 
     MONTH(order_date)
 ORDER BY 
-    month;
+    monthOfOrderDate;
 
 -- TIP: convert() 도 형식만 다를 뿐 cast 와 동일한 역할. Cast() 는 ANSI 구문으로 더 범용적임
 
 -- choose()
-SELECT CHOOSE(2, 'First', 'Second', 'Third') Result;
+SELECT CHOOSE(1, 'First', 'Second', 'Third') Result;
 
 -- select 에서 조건별로 데이타를 가져올 때는 주로 case ...when...then.. 구문을 많이 사용한다.
 -- 같은 효과
@@ -354,6 +384,9 @@ ORDER BY
 -- try_cast(): cast() 와 역할은 같다. 
 -- 하지만 casting 이 실패 했을 시 cast 는 error 를 발생하지만, try_cast() 는 null 을 리턴한다.
 SELECT 
+    CAST('12.345' AS DateTime)  Result;
+
+SELECT 
     TRY_CAST('12.345' AS DateTime)  Result;
 
 
@@ -372,7 +405,8 @@ SELECT
 --------------------------------------
 select *
 FROM 
-   sales.customers;
+   sales.customers
+order by first_name
 
 SELECT 
    ROW_NUMBER() OVER (
@@ -431,6 +465,8 @@ begin
 		row_num <= @end;
 
 	end
+
+exec usp_GetList 10,20
 
 -- TIP: 참고로 Order by 를 하지 않고, 그대로 Row_number 만 적용하고자 할 때
 -- ref: https://stackoverflow.com/questions/44105691/row-number-without-order-by

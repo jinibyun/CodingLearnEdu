@@ -1,6 +1,6 @@
 /*********************************
 trigger: DB 에서 이뤄지는 하나의 Action 에 반응 하여 다른 Action 이 자동으로 발생. 
-첫 번 째 Action 의 후에만 발생하는 것이 아니라, 설정에 따라 "후" 에 발생 가능
+Audit
 *********************************/
 
 -- 3 types
@@ -25,6 +25,8 @@ trigger: DB 에서 이뤄지는 하나의 Action 에 반응 하여 다른 Action
 --------------------------------------
 
 -- prep
+DROP TABLE if exists production.product_audits
+
 CREATE TABLE production.product_audits(
     change_id INT IDENTITY PRIMARY KEY,
     product_id INT NOT NULL,
@@ -34,6 +36,7 @@ CREATE TABLE production.product_audits(
     model_year SMALLINT NOT NULL,
     list_price DEC(10,2) NOT NULL,
     updated_at DATETIME NOT NULL,
+	updated_by VARCHAR(100) NOT NULL,
     operation CHAR(3) NOT NULL,
     CHECK(operation = 'INS' or operation='DEL')
 );
@@ -44,12 +47,13 @@ select SUSER_SNAME() -- session 이름
 -- 아래 trigger 의 역할은 production.products 테이블에서 
 -- 어떤 레코드가 삽입, 삭제 될때마다 바로 "직후"(After) 
 -- 그 레코들을 production.product_audits table 에 기록한다
-CREATE TRIGGER production.trg_product_audit
+ALTER TRIGGER production.trg_product_audit
 ON production.products
 AFTER INSERT, DELETE -- "After" . 여기에 사용할 수 있는 option 은 INSERT, UPDATE, DELETE
 AS
 BEGIN
     SET NOCOUNT ON;
+
     INSERT INTO production.product_audits(
         product_id, 
         product_name,
@@ -58,6 +62,7 @@ BEGIN
         model_year,
         list_price, 
         updated_at, 
+		updated_by,
         operation
     )
     SELECT
@@ -68,9 +73,10 @@ BEGIN
         model_year,
         i.list_price,
         GETDATE(),
+		SUSER_SNAME(),
         'INS'
     FROM
-        inserted i    -- 주의: INSERTED 라고 하는 "시스템 임시 table" 이용
+        inserted i    -- 주의: INSERTED 라고 하는 "시스템 임시 table" 이용: Data가 입력이 되기 직전에 이 system table 에 자료가 입력이 된다.
     UNION ALL -- 레코드와 레코드 의 결합
     SELECT
         d.product_id,
@@ -80,6 +86,7 @@ BEGIN
         model_year,
         d.list_price,
         GETDATE(),
+		SUSER_SNAME(),
         'DEL'
     FROM
         deleted d;  -- 주의: DELETED 라고 하는 "시스템 임시 table" 이용
@@ -128,7 +135,7 @@ FROM
 1. FOR or AFTER [INSERT, UPDATE, DELETE]: 위의 예제에서 처럼 어떤 table 의 
 insert/update/delete 작업 직후 연달아 자동으로 일어나게끔 할 때 사용.
 2. INSTEAD OF [INSERT, UPDATE, DELETE]: After 타입과는 반대로, 
-INSTEAD OF 트리거는 실제 insert/update/delete 작업을 대체하는 다른 action 을 정의할 때 사용. 
+"INSTEAD OF 트리거" 는 실제 insert/update/delete 작업을 대체하는 다른 action 을 정의할 때 사용. 
 여기에서 예제는 생략
 */
 
@@ -167,10 +174,9 @@ BEGIN
 		-- 특별한 함수로써, 
 		-- server 혹은 database 에서 발생하는 정보를 return 한다. 
 		-- 이 함수는 특별히 ddl trigger 혹은 logon trigger 에서만 사용가능
-        USER
+        USER -- 기본 schema 정보
     );
 END;
-GO
 
 -- test: 위에 생성한 trigger 가 index 와 관련 있기 때문에 다음과 같이 간단히 두 개의 index 생성
 CREATE NONCLUSTERED INDEX nidx_fname
@@ -322,6 +328,7 @@ SELECT 'Peter Rodriguez', '74 Street 1234', 10000
 GO			
 
 select * from test.Employees
+select * from test.EmployeesAudit
 -- trigger 작성
 -- 우선 이 trigger 작성의 목표는 test.Employees 를 수정하고 있는 사용자를 Audit 하기 위함이다.
 
@@ -412,12 +419,19 @@ GO
 
 select * from test.Employees
 
+-- 
 INSERT INTO test.Employees
         ( EmployeeName ,
           EmployeeAddress ,
           MonthSalary
         )
 SELECT 'Sungmin Smith', 'Ocean Dr 1234', 10000
+
+--
+delete from test.Employees where EmployeeID =1
+
+--
+update test.Employees set EmployeeName ='update something' where EmployeeId = 2
 
 select * from test.EmployeesAudit
 

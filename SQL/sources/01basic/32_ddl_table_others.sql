@@ -9,13 +9,13 @@ DROP TABLE IF EXISTS sales.revenues;
 --------------------------------------
 
 -- prep
--- 1
+-- 1 parent
 CREATE TABLE procurement.supplier_groups (
     group_id INT IDENTITY PRIMARY KEY,
     group_name VARCHAR (50) NOT NULL
 );
 
--- 2
+-- 2 child
 CREATE TABLE procurement.suppliers (
     supplier_id INT IDENTITY PRIMARY KEY,
     supplier_name VARCHAR (50) NOT NULL,
@@ -56,6 +56,8 @@ EXEC sp_rename 'sales.contr', 'contracts';
 --------------------------------------
 -- select into.. from
 --------------------------------------
+
+
 
 --------------------------------------
 -- temporary table

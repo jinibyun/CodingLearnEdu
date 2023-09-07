@@ -2,6 +2,10 @@
 distinct
 *********************************/
 
+SELECT city
+FROM sales.customers
+ORDER BY city;
+
 SELECT DISTINCT city
 FROM sales.customers
 ORDER BY city;
@@ -9,11 +13,9 @@ ORDER BY city;
 --------------------------------------
 -- distinct multiple
 --------------------------------------
-SELECT city
-    , STATE
+SELECT DISTINCT city, STATE, first_name
 FROM sales.customers
-ORDER BY city
-    , STATE;
+ORDER BY city, STATE;
 
 -- 위의 결과는 다음의 group by 구문과 일치
 --1

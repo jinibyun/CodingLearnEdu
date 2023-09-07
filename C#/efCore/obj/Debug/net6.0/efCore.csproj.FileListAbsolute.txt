@@ -1,0 +1,5 @@
+G:\Jini\git\CodingLearnEdu\C#\efCore\obj\Debug\net6.0\efCore.csproj.AssemblyReference.cache
+G:\Jini\git\CodingLearnEdu\C#\efCore\obj\Debug\net6.0\efCore.GeneratedMSBuildEditorConfig.editorconfig
+G:\Jini\git\CodingLearnEdu\C#\efCore\obj\Debug\net6.0\efCore.AssemblyInfoInputs.cache
+G:\Jini\git\CodingLearnEdu\C#\efCore\obj\Debug\net6.0\efCore.AssemblyInfo.cs
+G:\Jini\git\CodingLearnEdu\C#\efCore\obj\Debug\net6.0\efCore.csproj.CoreCompileInputs.cache

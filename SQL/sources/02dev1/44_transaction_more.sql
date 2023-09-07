@@ -4,7 +4,7 @@ transaction
 -- 가장 기본적인 부분에 대해서는 "26_modifying_transaction.sql" 에서 진행을 했고, 여기에서는 좀 더 나가서 "Explicit Transaction" 을 기준으로 깊이 있게 설명하기로 한다.
 
 /*------- Transaction Types -------*/
--- 1. Auto Commit Transaction (default) : 자동으로 Error 를 발생해서, 데이터 변경을 취소. 
+-- 1. Auto Commit Transaction : 자동으로 Error 를 발생해서, 데이터 변경을 취소. 
 -- 하지만, 두 가지 이상의 DML 에 대해서 모든 변경을 실행/취소 할 수 있는 것은 아니다.
 -- 2. Implicit Transaction : SET IMPLICIT_TRANSACTIONS ON/OFF 를 이용해서 암묵적인 transaction 을 시작할 수 있다.
 -- 3. Explicit Transaction : 주로 이 방법을 통해 진행
@@ -29,13 +29,14 @@ CREATE PROC SPAddCustommer
 @customerName varchar(50)
 AS
 BEGIN
-   BEGIN TRANSACTION
+   BEGIN TRAN
       INSERT INTO test.Customer VALUES(@customerId, @customerCode, @customerName)
 	  ---
 	  ---
 	  ---
-      IF(@@ERROR > 0) -- @@Error : 전역 변수
+      IF(@@ERROR != 0) -- @@Error : 전역 변수
       BEGIN
+		-- LOGGING
          ROLLBACK TRANSACTION
       END
       ELSE
@@ -79,12 +80,12 @@ delete from test.Customer;
 -- test: open 되어 있는 transaction 숫자 확인
 BEGIN TRANSACTION T1
       
-	  INSERT INTO test.Customer VALUES (10, 'Code_10', 'Ramesh')
-      INSERT INTO test.Customer VALUES (11, 'Code_11', 'Suresh')
+	  INSERT INTO test.Customer VALUES (14, 'Code_10', 'Ramesh')
+      INSERT INTO test.Customer VALUES (16, 'Code_11', 'Suresh')
 
       BEGIN TRANSACTION T2
-            INSERT INTO test.Customer VALUES (12, 'Code_12', 'Priyanka')
-            INSERT INTO test.Customer VALUES (13, 'Code_13', 'Preety')   
+            INSERT INTO test.Customer VALUES (17, 'Code_12', 'Priyanka')
+            INSERT INTO test.Customer VALUES (23, 'Code_13', 'Preety')   
 
             PRINT @@TRANCOUNT --2
       COMMIT TRANSACTION T2
@@ -106,6 +107,13 @@ BEGIN TRANSACTION
  SAVE TRANSACTION SavePoint1 -- SAVE TRANSACTION 을 통해 전체 ROLLBACK 이 아닌 부분적인 ROLLBACK (Partial Rollback) 을 가능하게 한다.
      INSERT INTO test.Customer VALUES (1, 'Code_1', 'Ramesh')
      INSERT INTO test.Customer VALUES (2, 'Code_2', 'Suresh')
+ SAVE TRANSACTION SavePoint11 -- SAVE TRANSACTION 을 통해 전체 ROLLBACK 이 아닌 부분적인 ROLLBACK (Partial Rollback) 을 가능하게 한다.
+     INSERT INTO test.Customer VALUES (1, 'Code_1', 'Ramesh')
+     INSERT INTO test.Customer VALUES (2, 'Code_2', 'Suresh')
+ SAVE TRANSACTION SavePoint18 -- SAVE TRANSACTION 을 통해 전체 ROLLBACK 이 아닌 부분적인 ROLLBACK (Partial Rollback) 을 가능하게 한다.
+     INSERT INTO test.Customer VALUES (1, 'Code_1', 'Ramesh')
+     INSERT INTO test.Customer VALUES (2, 'Code_2', 'Suresh')
+
  SAVE TRANSACTION SavePoint2
      INSERT INTO test.Customer VALUES (3, 'Code_3', 'Priyanka')
      INSERT INTO test.Customer VALUES (4, 'Code_4', 'Preety')

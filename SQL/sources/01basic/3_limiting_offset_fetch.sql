@@ -1,5 +1,5 @@
 /*********************************
-limiting fetch
+limiting fetch -- 가져오는 레코드의 숫자를 제한
 *********************************/
 
 --------------------------------------
@@ -19,7 +19,6 @@ SELECT product_name
 FROM production.products
 ORDER BY list_price
     , product_name OFFSET 10 ROWS
-
 FETCH NEXT 10 ROWS ONLY;
 
 --------------------------------------
@@ -30,8 +29,7 @@ SELECT product_name
 FROM production.products
 ORDER BY list_price DESC
     , product_name OFFSET 0 ROWS
-
-FETCH FIRST 10 ROWS ONLY;
+FETCH FIRST 10 ROWS ONLY;-- FETCH NEXT 가 아니라 FETCH FIRST 사용
 
 /************************************************
 Assignment 1
@@ -41,3 +39,9 @@ order id 별로 정렬해서 (역정렬: descending) 가져오고 100 개의 Dat
 
 이 때 OFFSET 문법을 이용해서 작성한다.
 *************************************************/
+
+select order_id, order_status, customer_id from sales.orders
+ORDER BY order_id desc
+OFFSET 0 ROWS
+FETCH FIRST 100 ROWS ONLY;
+

@@ -1,4 +1,4 @@
-/*********************************
+﻿/*********************************
 subquery
 *********************************/
 
@@ -12,7 +12,7 @@ SELECT
 FROM
     sales.orders
 WHERE
-    customer_id IN (
+    customer_id IN ( -- multiple "or"
         SELECT
             customer_id
         FROM
@@ -32,7 +32,7 @@ SELECT
 FROM
     production.products
 WHERE
-    list_price > (
+    list_price > ( -- single 값을 비교. > 뒤에 복수의 값이 올 수 없다.
         SELECT
             AVG (list_price)
         FROM
@@ -54,6 +54,11 @@ ORDER BY
 --------------------------------------
 -- in place of an expression
 --------------------------------------
+
+-- select 1, 2, 3... (단일 값)
+-- from 테이블 형식의 data (복수 값)
+-- where ... (복수 값, 단일 값)
+
 SELECT
     order_id,
     order_date,
@@ -80,7 +85,7 @@ SELECT
 FROM
     production.products
 WHERE
-    list_price >= ANY (
+    list_price >= ANY ( -- 내부적으로 or 의 의미
         SELECT
             AVG (list_price)
         FROM
@@ -99,7 +104,7 @@ SELECT
 FROM
     production.products
 WHERE
-    list_price >= ALL (
+    list_price >= ALL ( -- 내부적으로 and 의 의미
         SELECT
             AVG (list_price)
         FROM
@@ -184,5 +189,5 @@ FROM
 	sales.orders
     GROUP BY 
 	staff_id
-) t; -- always have table alias
+) t -- always have table alias. "반드시" table 의 alias 를 이용한다.
 

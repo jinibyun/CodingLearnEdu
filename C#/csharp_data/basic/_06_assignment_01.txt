@@ -1,0 +1,3 @@
+﻿// _05_connectionStringAppSettings.cs 에서 사용했던 방식대로 _01 부터 _04 까지의 모든 파일의 connection string 을 가져오는 방식을
+// 바뀌되, base class 인 basicProcess.cs 를 활용한다.
+

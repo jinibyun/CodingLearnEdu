@@ -42,3 +42,7 @@ FROM
     sales.sales_summary
 GROUP BY
     ROLLUP(brand, category);
+
+-- (brand,category)
+-- (brand)
+-- ()

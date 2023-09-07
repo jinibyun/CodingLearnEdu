@@ -1,13 +1,14 @@
-/*********************************
+﻿/*********************************
 Basic Query
 *********************************/
+-- SQL: Structured "Query" Language
+--------------------------------------
+--------------------------------------
 
---------------------------------------
--- single 
---------------------------------------
-SELECT first_name
+select first_name
     , last_name
-FROM sales.customers;
+FROM sales.customers -- table 
+GO -- ; 와 같이 하나의 명령 단위를 구분하는 구분자 (생략도 할 수 있음)
 
 --------------------------------------
 -- multiple
@@ -20,15 +21,15 @@ FROM sales.customers;
 --------------------------------------
 -- all
 --------------------------------------
-SELECT *
+SELECT * -- 모든 칼럼
 FROM sales.customers;
 
 --------------------------------------
--- where
+-- where 조건
 --------------------------------------
 SELECT *
 FROM sales.customers
-WHERE STATE = 'CA';
+where STATE = 'CA'; -- where 는 if 의 의미. sql 구문에서 문자열 처리는 홑따옴표.
 
 --------------------------------------
 -- where and order by
@@ -36,7 +37,7 @@ WHERE STATE = 'CA';
 SELECT *
 FROM sales.customers
 WHERE STATE = 'CA'
-ORDER BY first_name;
+ORDER BY first_name; -- 정렬: 기본 정렬 값: 오름차순 (Ascending)
 
 --------------------------------------
 -- grouping

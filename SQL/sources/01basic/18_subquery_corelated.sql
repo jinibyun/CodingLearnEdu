@@ -1,5 +1,5 @@
 /*********************************
-correlated subquery
+correlated subquery (상호 연관 쿼리)
 *********************************/
 
 /*-------------------------------
@@ -38,3 +38,27 @@ Assignment 6
 sales.order_items (주문 상세 table) 에서 주문별 최고 가격에 해당하는 제품과 가격을 얻어 오는데, 이때 이 최고 가격에 해당하는 제품의 discount 를 (각각 다르게 적용돼었음) 알고 싶을 때 작성할 수 있는 corelated subquery
 
 *************************************************/
+select * from sales.order_items
+
+SELECT
+	order_id,
+	product_id,
+	list_price as 'MaxPrice',
+    discount
+FROM
+    sales.order_items s1
+WHERE
+    list_price IN (
+        SELECT  
+			-- .order_id,
+            MAX (s2.list_price)
+        FROM
+            sales.order_items s2
+        WHERE
+           s2.order_id = s1.order_id
+        GROUP BY
+            s2.order_id
+    )
+ORDER BY
+    s1.order_id,
+    s1.product_id;

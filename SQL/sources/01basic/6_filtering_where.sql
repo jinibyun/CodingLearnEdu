@@ -1,5 +1,5 @@
 /*********************************
-where condition
+where condition (조건)
 *********************************/
 --------------------------------------
 -- using equality
@@ -15,9 +15,11 @@ FROM
 WHERE
     category_id = 1
 ORDER BY
-    list_price DESC;
+    list_price DESC
+
+
 --------------------------------------
--- using "and" operator
+-- using "and" operator (논리곱)
 --------------------------------------
 SELECT
     product_id,
@@ -76,7 +78,21 @@ SELECT
 FROM
     production.products
 WHERE
-    list_price BETWEEN 1899.00 AND 1999.99
+    list_price BETWEEN 1899.00 AND 1999.99 -- 이상, 이하 (초과 미만이 아니라)
+ORDER BY
+    list_price DESC;
+
+-- 위와 같은 표현
+SELECT
+    product_id,
+    product_name,
+    category_id,
+    model_year,
+    list_price
+FROM
+    production.products
+WHERE
+    list_price >= 1899.00 AND list_price <= 1999.99 -- 이상, 이하 (초과 미만이 아니라)
 ORDER BY
     list_price DESC;
 
@@ -92,7 +108,8 @@ SELECT
 FROM
     production.products
 WHERE
-    list_price IN (299.99, 369.99, 489.99)
+    list_price IN (299.99, 369.99, 489.99) -- in: mulitple or
+	--list_price = 299.99 or list_price = 369.99 or list_price = 489.99
 ORDER BY
     list_price DESC;
 
@@ -180,7 +197,7 @@ SELECT
 FROM
     sales.customers
 WHERE
-    last_name LIKE '[^A-X]%'
+    last_name LIKE '[^A-X]%' -- ^ (tilde) 의 의미: not  . '[YZ]%' 표현과 동일
 ORDER BY
     last_name;
 
@@ -206,3 +223,14 @@ Assignment 2
 
 그 후에 이 고객들의 customer_id (아이디) 정보를 바탕으로 sales.orders (주문 정보) 의 모든 칼럼을 조회한다.  추가 조건은 2017 년에 주문한 정보를 가져오고 이 주문한 날짜 칼럼 (order_date) 를 기준으로 올림차순으로 정렬한다. (ascending)
 *************************************************/
+select * from sales.orders
+where customer_id in 
+(
+	select customer_id
+	from sales.customers     
+	where state = 'NY' 
+	and phone is not null
+	and email not like '%@gmail.com%' and email not like '%@hotmail.com%'
+)
+and order_date > '2016-12-31' and order_date < '2018-01-01'
+order by order_date ASC

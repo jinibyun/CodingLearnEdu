@@ -41,7 +41,7 @@ WHERE
 -- NOTE: data 양이 많으면 100 % table scanning 은 조회 성능을 저하시킨다.
 
 /* --------- clustered index -----------*/
--- key 값을 바탕으로 정렬하여 데이타를 저장 시킨다 (참고로 clustered table 이라고도 불린다)
+-- key 값을 바탕으로 "정렬하여 데이타를 저장" 시킨다 (참고로 clustered table 이라고도 불린다)
 -- 하나의 table 에 단 하나의 clustered index 생성 가능
 -- B-Tree node: root node (index) - more than on intermedate node(index) - more than one leaf node (data)
 -- table 에 PK 를 생성해서 정의하는 순간 "자동으로" clustered index 생성
@@ -86,7 +86,7 @@ WHERE
 --------------------------------------
 -- 2. non clustered index
 --------------------------------------
--- clustered index 와는 달리 a nonclustered index 는 Data Page 를 그대로 둔 상태에서, 
+-- clustered index 와는 달리 a nonclustered index 는 Data Page 를 "그대로 둔 상태"에서, 
 -- 별도로 leaf page 와 root page 를 구성한다. 
 -- 이 때 clustered index 와 마찬가지로 B Tree 를 구성한다.
 
@@ -185,7 +185,8 @@ ON sales.customers
 DISABLE;
 
 -- table 과 관련되 모든 index 들을 한 번에 disable
-ALTER INDEX ALL ON sales.customers
+ALTER INDEX ALL 
+ON sales.customers
 DISABLE; 
 -- 이유: 대용량의 데이타를 Update 하기 전에 
 -- overhead 를 피하기 위해 일부러 이렇게 index 를 잠시 disable 해 둔다.
@@ -197,7 +198,7 @@ select * from sales.customers
 
 -- 2. enable
 ALTER INDEX ALL ON sales.customers
-REBUILD; 
+REBUILD; -- enable
 -- 이유: 대용량의 데이타를 Update 하기 전에 overhead 를 피하기 위해 일부러 이렇게 index 를 잠시 disable 해 둔 것을 다시 사용하기 위해 진행
 
 -- test
@@ -279,6 +280,7 @@ WHERE phone = '(281) 363-3309';
 -- TIP: table 에 연결되어 있는 index 확인
 sp_helpindex 'sales.customers'
 
+
 /********* 
 추가: Unique index (Unique 라는 성격을 clustered 혹은 non-clustered 와 조합
 해서 추가적인 제약 조건을 가하는 것)
@@ -298,16 +300,19 @@ FROM
 WHERE 
     email = 'caren.stephens@msn.com';
 
+NN
+ND
+
 -- test (email 중복성 체크)
 SELECT 
     email, 
-    COUNT(email)
+    COUNT(*)
 FROM 
     sales.customers
 GROUP BY 
     email
 HAVING 
-    COUNT(email) > 1;
+    COUNT(*) > 1;
 
 -- 위의 test 결과 중복성이 email 에 없으므로, 여기에 unique index 를 설정할 수 있다.
 CREATE UNIQUE INDEX ix_cust_email 
@@ -337,14 +342,14 @@ create table IndexTest
 	name varchar(20) not null,
 	updateDate datetime not null
 )
--- 200000 레코드 삽입 (약 1 분 10 초 소요)
+-- 100000 레코드 삽입 (약 1 분 10 초 소요)
 
 declare @count int;
 declare @name varchar(20)
 set @count = 0;
 set @name = ''
 
-while @count <= 200000 
+while @count <= 100000 
 begin
 	set @name = 'TEST ' + cast(@count as varchar)
 		INSERT INTO IndexTest (num, name, updateDate)
@@ -356,19 +361,20 @@ end
 -- 다음 쿼리 구문을 통해 table scan 이 아닌 index scan 을 확인 한다. (실행 플랜)
 -- Estimated Numbers of Rows to be read 확인한다.
 -- "속도" 향상을 위해서 적용할 수 있는 non-clustered index 를 적용한다.
--- filtered index 구문도 함께 사용한다.
+-- included index 구문도 함께 사용한다.
 
 select 
 	num, name, updateDate
 from IndexTest
 where num > 100000
 
-drop index ix_IndexTest_num
-on IndexTest
+
+-- 답
 
 create index ix_IndexTest_num
 on IndexTest(num)
 include (name, updateDate)
+
 
 
 

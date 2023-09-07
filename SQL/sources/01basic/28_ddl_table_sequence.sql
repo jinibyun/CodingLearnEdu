@@ -3,13 +3,13 @@ table
 *********************************/
 
 CREATE TABLE sales.visits (
-    visit_id INT PRIMARY KEY IDENTITY (1, 1),
+    visit_id INT PRIMARY KEY IDENTITY (1, 1), -- PK 특징: 1. NN (NOT NULL) 2. ND (NOT DUPLICATE)
     first_name VARCHAR (50) NOT NULL,
     last_name VARCHAR (50) NOT NULL,
     visited_at DATETIME,
     phone VARCHAR(20),
     store_id INT NOT NULL,
-    FOREIGN KEY (store_id) REFERENCES sales.stores (store_id)
+    FOREIGN KEY (store_id) REFERENCES sales.stores (store_id) -- store id 칼럼은 sales.stores 의 store_id 를 참조한다. 즉 sales.stored 에 존재하지 않는 store_id 를 입력할 수 없다. -- >> "참조 무결성" (Referential Integrity)
 );
 
 --------------------------------------
@@ -18,7 +18,7 @@ CREATE TABLE sales.visits (
 CREATE SCHEMA hr;
 
 CREATE TABLE hr.person (
-    person_id INT IDENTITY(1,1) PRIMARY KEY,
+    person_id INT IDENTITY(1,1) PRIMARY KEY, -- IDENTITY : 초기 값, 증가하는 step 값
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     gender CHAR(1) NOT NULL
@@ -36,7 +36,7 @@ CREATE SEQUENCE item_counter
     START WITH 10
     INCREMENT BY 10;
 
--- use
+-- use (test)
 SELECT NEXT VALUE FOR item_counter; -- 한 번 씩 실행할 때마다, 10 씩 늘어나는 value 리턴
 
 --------------------------------------
@@ -179,6 +179,6 @@ Allow using in multiple tables	                            No	        Yes
 ---------------------------------------------------------------------------------------
 
 -- sequence object 사용 고려 사항 (identity 대신에)
--- 여러 table 에 걸쳐서 증가하는 일련 번호가 필요할 경우
+-- 여러 table 에 걸쳐서 증가하는 일관성 있는 증가 번호를 가지는 일련 번호가 필요할 경우
 -- 일련 번호의 한계치에 도달했을 때 다시 처음부터 일련번호를 시작할 경우
 --------------------------------*/

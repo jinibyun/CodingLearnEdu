@@ -1,6 +1,7 @@
 /*********************************
 ddl: data definition language
 *********************************/
+-- CREATE, DROP, ALTER
 
 --------------------------------------
 -- create DB
@@ -73,13 +74,13 @@ BEGIN
     SELECT 
         * 
     FROM 
-        dbo.offices
+        offices
     WHERE 
         office_id = @id;
 END;
 
 --4. 위의 세 가지 진행 모두 dbo 라는 기본 schema 안에서 이뤄지고 있음. 그러므로 아래와 같은 실행 문제 없음
-exec usp_get_office_by_id 1
+exec usp_get_office_by_id 2
 
 --5. 만약 schema 를 다음과 같이 수정한다면...
 ALTER SCHEMA sales TRANSFER OBJECT::dbo.offices; 
